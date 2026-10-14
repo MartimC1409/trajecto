@@ -1,15 +1,19 @@
 import type { Page, Request } from '@playwright/test';
 import { REVERSE_RESPONSE, SEARCH_RESPONSE } from './fixtures/photon';
+import { ROUTE_RESPONSE } from './fixtures/valhalla';
 
 export interface MockState {
   readonly searchRequests: URL[];
   readonly reverseRequests: URL[];
+  /** Corpos JSON dos pedidos de rota (POST /api/route). */
+  readonly routeRequests: Record<string, unknown>[];
   readonly consoleErrors: string[];
 }
 
 /**
  * Substitui os serviços externos por respostas locais:
  * - pesquisa (proxy /geocoder → Photon);
+ * - rotas (função /api/route → Valhalla);
  * - tiles do OpenFreeMap (TileJSON com tiles vazios).
  * Assim os testes são rápidos, repetíveis e não sobrecarregam serviços públicos.
  */
@@ -58,7 +62,12 @@ export async function mockServices(
   page: Page,
   options: { searchStatus?: number } = {},
 ): Promise<MockState> {
-  const state: MockState = { searchRequests: [], reverseRequests: [], consoleErrors: [] };
+  const state: MockState = {
+    searchRequests: [],
+    reverseRequests: [],
+    routeRequests: [],
+    consoleErrors: [],
+  };
 
   page.on('console', (message) => {
     if (message.type() === 'error') state.consoleErrors.push(message.text());
@@ -76,6 +85,10 @@ export async function mockServices(
   await page.route('**/geocoder/reverse?**', async (route) => {
     state.reverseRequests.push(new URL(route.request().url()));
     await route.fulfill({ json: REVERSE_RESPONSE });
+  });
+  await page.route('**/api/route', async (route) => {
+    state.routeRequests.push(route.request().postDataJSON() as Record<string, unknown>);
+    await route.fulfill({ json: ROUTE_RESPONSE });
   });
   await page.route('https://tiles.openfreemap.org/planet', (route) =>
     route.fulfill({

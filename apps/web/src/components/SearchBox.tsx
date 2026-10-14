@@ -16,6 +16,10 @@ interface SearchBoxProps {
   readonly favorites: readonly Favorite[];
   readonly recent: readonly Place[];
   readonly onSelect: (place: Place) => void;
+  /** Texto do rótulo (por omissão, o da pesquisa principal). */
+  readonly label?: string;
+  readonly placeholder?: string;
+  readonly autoFocus?: boolean;
 }
 
 interface Option {
@@ -39,7 +43,16 @@ const FAVORITE_ICON: Record<Favorite['kind'], IconName> = {
  * Caixa de pesquisa com autocompletar, segundo o padrão "combobox" da WAI-ARIA:
  * setas para navegar, Enter para escolher, Escape para fechar ou limpar.
  */
-export function SearchBox({ geocoder, getBias, favorites, recent, onSelect }: SearchBoxProps) {
+export function SearchBox({
+  geocoder,
+  getBias,
+  favorites,
+  recent,
+  onSelect,
+  label,
+  placeholder,
+  autoFocus = false,
+}: SearchBoxProps) {
   const { t } = useTranslation();
   const id = useId();
   const inputId = `${id}-input`;
@@ -174,7 +187,7 @@ export function SearchBox({ geocoder, getBias, favorites, recent, onSelect }: Se
   return (
     <div className="search" role="search">
       <label htmlFor={inputId} className="visually-hidden">
-        {t('search.label')}
+        {label ?? t('search.label')}
       </label>
       <div className="search-field">
         <Icon name="search" />
@@ -192,7 +205,9 @@ export function SearchBox({ geocoder, getBias, favorites, recent, onSelect }: Se
           spellCheck={false}
           enterKeyHint="search"
           maxLength={MAX_QUERY_LENGTH}
-          placeholder={t('search.placeholder')}
+          placeholder={placeholder ?? t('search.placeholder')}
+          // Só quando o utilizador pede para alterar um ponto da rota (abre o campo de propósito).
+          autoFocus={autoFocus}
           value={inputValue}
           onChange={(event) => {
             setInputValue(event.target.value);

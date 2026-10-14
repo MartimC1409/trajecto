@@ -3,6 +3,7 @@ import react from '@vitejs/plugin-react';
 import type { ProxyOptions } from 'vite';
 import { defineConfig, loadEnv } from 'vite';
 import { buildSecurityHeaders, originOf } from './security-headers';
+import { apiPlugin } from './vite-api-plugin';
 
 const DEFAULT_GEOCODER_UPSTREAM = 'https://photon.komoot.io';
 const DEFAULT_TILEJSON_URL = 'https://tiles.openfreemap.org/planet';
@@ -45,7 +46,8 @@ export default defineConfig(({ mode }) => {
   };
 
   return {
-    plugins: [react()],
+    // ROUTER_UPSTREAM permite usar um Valhalla próprio (por exemplo http://localhost:8002/route).
+    plugins: [react(), apiPlugin({ routeUpstream: env.ROUTER_UPSTREAM || undefined })],
     worker: { format: 'es' },
     server: { port: 5173, strictPort: true, proxy },
     preview: {
@@ -68,7 +70,7 @@ export default defineConfig(({ mode }) => {
       include: ['src/**/*.test.{ts,tsx}'],
       coverage: {
         provider: 'v8',
-        include: ['src/**/*.{ts,tsx}', 'api/**/*.ts'],
+        include: ['src/**/*.{ts,tsx}', 'api/**/*.ts', 'vite-api-plugin.ts'],
         // O mapa (WebGL) e o arranque são cobertos pelos testes ponta a ponta (Playwright).
         exclude: [
           'src/**/*.test.{ts,tsx}',

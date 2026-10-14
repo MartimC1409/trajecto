@@ -1,0 +1,85 @@
+// @vitest-environment node
+import type { IncomingMessage, ServerResponse } from 'node:http';
+import { Readable } from 'node:stream';
+import type { Plugin } from 'vite';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { apiPlugin } from '../../vite-api-plugin';
+
+type Handler = (req: IncomingMessage, res: ServerResponse) => void;
+
+function mount(plugin: Plugin, hook: 'configureServer' | 'configurePreviewServer'): Handler {
+  let handler: Handler | undefined;
+  const server = { middlewares: { use: (_path: string, fn: Handler) => (handler = fn) } };
+  (plugin[hook] as (s: unknown) => void)(server);
+  if (!handler) throw new Error('sem middleware');
+  return handler;
+}
+
+function request(method: string, body: string, headers: Record<string, string> = {}) {
+  const req = Readable.from(body ? [Buffer.from(body)] : []) as unknown as IncomingMessage;
+  Object.assign(req, { method, headers: { 'content-type': 'application/json', ...headers } });
+  return req;
+}
+
+function response() {
+  const headers = new Map<string, string>();
+  let resolve: (body: string) => void = () => undefined;
+  const done = new Promise<string>((r) => (resolve = r));
+  const res = {
+    statusCode: 0,
+    setHeader: (name: string, value: string) => headers.set(name, value),
+    end: (chunk?: Buffer) => resolve(chunk ? chunk.toString() : ''),
+  } as unknown as ServerResponse;
+  return { res, headers, done };
+}
+
+const BODY = JSON.stringify({
+  locations: [
+    { lat: 38.7, lon: -9.1 },
+    { lat: 38.8, lon: -9.2 },
+  ],
+  costing: 'auto',
+  language: 'pt-PT',
+});
+
+describe('apiPlugin', () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  it('serve /api/route com a mesma função do Vercel, em dev e em preview', async () => {
+    const fetchMock = vi.fn<typeof fetch>(
+      async () => new Response('{"trip":{}}', { headers: { 'Content-Type': 'application/json' } }),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+    const plugin = apiPlugin({ routeUpstream: 'http://localhost:8002/route' });
+    for (const hook of ['configureServer', 'configurePreviewServer'] as const) {
+      const { res, headers, done } = response();
+      mount(plugin, hook)(request('POST', BODY, { cookie: 'x=1' }), res);
+      expect(await done).toBe('{"trip":{}}');
+      expect(res.statusCode).toBe(200);
+      expect(headers.get('cache-control')).toBe('no-store');
+    }
+    expect(fetchMock.mock.calls[0]?.[0]).toBe('http://localhost:8002/route');
+  });
+
+  it('recusa corpos grandes e outros métodos, e trata erros internos', async () => {
+    const handler = mount(apiPlugin(), 'configureServer');
+    const big = response();
+    handler(request('POST', 'x'.repeat(70_000)), big.res);
+    await big.done;
+    expect(big.res.statusCode).toBe(413);
+
+    const get = response();
+    handler(request('GET', ''), get.res);
+    await get.done;
+    expect(get.res.statusCode).toBe(405);
+
+    const broken = response();
+    const req = request('POST', BODY);
+    Object.assign(req, { headers: null });
+    const error = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    handler(req, broken.res);
+    await broken.done;
+    expect(broken.res.statusCode).toBe(500);
+    error.mockRestore();
+  });
+});

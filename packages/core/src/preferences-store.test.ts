@@ -29,6 +29,40 @@ describe('createPreferencesStore', () => {
     expect(prefs.lastView).toEqual(DEFAULT_PREFERENCES.lastView);
   });
 
+  it('acrescenta as preferências de rota a dados antigos e corrige valores fora dos limites', () => {
+    const storage = createMemoryStorage({
+      [PREFERENCES_STORAGE_KEY]: JSON.stringify({
+        version: 1,
+        theme: 'dark',
+        language: 'pt-PT',
+        historyEnabled: false,
+        lastView: DEFAULT_PREFERENCES.lastView,
+      }),
+    });
+    const old = createPreferencesStore(storage).getSnapshot();
+    expect(old).toMatchObject({
+      theme: 'dark',
+      historyEnabled: false,
+      travelMode: 'car',
+      voiceGuidance: true,
+      routePreferences: DEFAULT_PREFERENCES.routePreferences,
+      fuel: DEFAULT_PREFERENCES.fuel,
+    });
+    storage.setItem(
+      PREFERENCES_STORAGE_KEY,
+      JSON.stringify({
+        ...DEFAULT_PREFERENCES,
+        travelMode: 'bike',
+        routePreferences: { avoidTolls: true },
+        fuel: { carLitresPer100Km: 500, motorcycleLitresPer100Km: 4, pricePerLitre: 1.9 },
+      }),
+    );
+    const store = createPreferencesStore(storage);
+    expect(store.getSnapshot().travelMode).toBe('bike');
+    expect(store.getSnapshot().routePreferences).toEqual(DEFAULT_PREFERENCES.routePreferences);
+    expect(store.getSnapshot().fuel).toEqual(DEFAULT_PREFERENCES.fuel);
+  });
+
   it('grava alterações e ignora valores iguais', () => {
     const storage = createMemoryStorage();
     const store = createPreferencesStore(storage);

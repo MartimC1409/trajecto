@@ -507,6 +507,496 @@ a {
   background: #7b3fb3;
 }
 
+/* Botão principal */
+.button.primary {
+  background: var(--accent);
+  color: var(--accent-contrast);
+  border-color: var(--accent);
+  font-weight: 600;
+}
+
+/* Direções */
+.sheet.directions {
+  max-height: 62vh;
+}
+
+.mode-tabs {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+  margin: 12px 0 0;
+  padding: 4px;
+  border: 0;
+  border-radius: var(--radius);
+  background: var(--surface-2);
+}
+
+.mode-tab {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-height: var(--tap);
+  padding: 6px 4px;
+  border-radius: calc(var(--radius) - 4px);
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+/* O botão de opção fica invisível mas focável; o cartão inteiro é a área de toque. */
+.mode-tab input {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.mode-tab:has(input:checked) {
+  background: var(--surface);
+  color: var(--accent);
+  font-weight: 600;
+  box-shadow: 0 1px 4px rgb(0 0 0 / 0.15);
+}
+
+.mode-tab:has(input:focus-visible) {
+  outline: 3px solid var(--focus);
+}
+
+.waypoint-list {
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.waypoint {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: var(--tap);
+  padding: 2px 0;
+  color: var(--text);
+}
+
+.waypoint .option-text {
+  flex: 1;
+}
+
+.icon-button.bordered {
+  border-color: var(--border);
+}
+
+.waypoint-tools {
+  justify-content: space-between;
+}
+
+.waypoint-tools,
+.waypoint-search-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.waypoint-search {
+  margin-top: 12px;
+}
+
+.waypoint-search .search {
+  max-width: none;
+}
+
+.waypoint-search .search-field {
+  box-shadow: none;
+  border: 1px solid var(--border);
+}
+
+.disclosure {
+  margin-top: 12px;
+}
+
+.disclosure::after {
+  content: '▾';
+  margin-left: 4px;
+}
+
+.disclosure[aria-expanded='true']::after {
+  content: '▴';
+}
+
+.route-options {
+  margin-top: 8px;
+}
+
+.number-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 8px 0;
+}
+
+.number-field input {
+  min-height: var(--tap);
+  max-width: 260px;
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 1rem;
+}
+
+.number-field input[aria-invalid='true'] {
+  border-color: var(--danger);
+}
+
+.directions-status {
+  min-height: 1.4em;
+  margin: 10px 0 0;
+  color: var(--text-muted);
+}
+
+.route-list {
+  display: grid;
+  gap: 8px;
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.route-option {
+  display: grid;
+  gap: 2px;
+  width: 100%;
+  min-height: var(--tap);
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.route-option[aria-pressed='true'] {
+  border: 2px solid var(--accent);
+  padding: 9px 11px;
+}
+
+.route-duration {
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+
+.route-meta {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.route-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.tag {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  font-size: 0.8rem;
+}
+
+.steps {
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.step {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 8px 0;
+  border-top: 1px solid var(--border);
+}
+
+.step-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+/* Setas das manobras e das faixas (rodadas com classes: a CSP não permite estilos inline). */
+.maneuver-icon {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+}
+
+.maneuver-exit {
+  position: absolute;
+  top: 22%;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.turn-straight {
+  transform: none;
+}
+
+.turn-slight-right {
+  transform: rotate(45deg);
+}
+
+.turn-right {
+  transform: rotate(90deg);
+}
+
+.turn-sharp-right {
+  transform: rotate(135deg);
+}
+
+.turn-slight-left {
+  transform: rotate(-45deg);
+}
+
+.turn-left {
+  transform: rotate(-90deg);
+}
+
+.turn-sharp-left {
+  transform: rotate(-135deg);
+}
+
+.mirror {
+  transform: scaleX(-1);
+}
+
+.lanes {
+  display: flex;
+  gap: 4px;
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.lane {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid rgb(255 255 255 / 0.5);
+  border-radius: 6px;
+}
+
+.lane-active {
+  background: #ffffff;
+  color: var(--nav-bg);
+}
+
+.lane-valid {
+  color: #ffffff;
+}
+
+.lane-unused {
+  opacity: 0.45;
+}
+
+/* Marcadores da rota no mapa */
+.route-point {
+  width: 18px;
+  height: 18px;
+  border: 3px solid #ffffff;
+  border-radius: 50%;
+  background: #1b7f3b;
+  box-shadow: 0 1px 6px rgb(0 0 0 / 0.35);
+}
+
+.route-point-stop {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  background: #e8710a;
+  color: #ffffff;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.nav-puck {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border: 3px solid #ffffff;
+  border-radius: 50%;
+  background: #1a73e8;
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgb(0 0 0 / 0.4);
+}
+
+.nav-puck svg {
+  fill: currentColor;
+}
+
+/* Navegação */
+:root {
+  --nav-bg: #0b5c33;
+  --nav-text: #ffffff;
+}
+
+:root[data-theme='dark'] {
+  --nav-bg: #12452b;
+}
+
+/* A região ocupa o ecrã (para ter área e ser anunciada), mas deixa os toques chegar ao mapa. */
+.nav {
+  position: absolute;
+  z-index: 3;
+  inset: 0;
+  pointer-events: none;
+}
+
+.nav > * {
+  pointer-events: auto;
+}
+
+.nav-banner {
+  position: absolute;
+  z-index: 3;
+  top: 0;
+  left: 0;
+  right: 0;
+  padding: calc(12px + env(safe-area-inset-top)) calc(16px + env(safe-area-inset-right)) 12px
+    calc(16px + env(safe-area-inset-left));
+  background: var(--nav-bg);
+  color: var(--nav-text);
+  box-shadow: var(--shadow);
+}
+
+.nav-step {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.nav-text p {
+  margin: 0;
+}
+
+.nav-distance {
+  font-size: 1.8rem;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.nav-instruction {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 600;
+}
+
+.nav-exit {
+  font-size: 0.95rem;
+  opacity: 0.9;
+}
+
+.nav-then {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 0 0;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgb(0 0 0 / 0.25);
+}
+
+.nav-status {
+  position: absolute;
+  z-index: 3;
+  top: calc(140px + env(safe-area-inset-top));
+  left: 12px;
+  right: 12px;
+  margin: 0;
+  padding: 8px 12px;
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: var(--shadow);
+  text-align: center;
+}
+
+.nav-footer {
+  position: absolute;
+  z-index: 3;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 12px calc(16px + env(safe-area-inset-right)) calc(12px + env(safe-area-inset-bottom))
+    calc(16px + env(safe-area-inset-left));
+  background: var(--surface);
+  border-radius: var(--radius) var(--radius) 0 0;
+  box-shadow: var(--shadow);
+}
+
+.nav-summary p {
+  margin: 0;
+}
+
+.nav-eta {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #137333;
+}
+
+:root[data-theme='dark'] .nav-eta {
+  color: #81c995;
+}
+
+.nav-remaining {
+  color: var(--text-muted);
+}
+
+.nav-badge {
+  display: inline-block;
+  margin-top: 4px !important;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.nav-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.nav-actions .icon-button {
+  border-color: var(--border);
+}
+
+.app.navigating .maplibregl-ctrl-top-right {
+  display: none;
+}
+
+.app.navigating .maplibregl-ctrl-bottom-left,
+.app.navigating .maplibregl-ctrl-bottom-right {
+  bottom: calc(96px + env(safe-area-inset-bottom));
+}
+
 /* Controlos do MapLibre abaixo da barra superior e com alvos de toque maiores.
    O prefixo `.app` garante que estas regras ganham às do CSS do MapLibre. */
 .app .maplibregl-ctrl-top-right {
@@ -520,6 +1010,34 @@ a {
 
 /* Ecrãs largos: painel do local à esquerda, em vez de folha inferior */
 @media (min-width: 768px) {
+  .sheet.directions {
+    max-height: calc(100% - var(--topbar-h) - 24px);
+  }
+
+  .nav-banner {
+    left: 12px;
+    right: auto;
+    top: 12px;
+    width: 420px;
+    border-radius: var(--radius);
+  }
+
+  .nav-status {
+    top: auto;
+    bottom: calc(110px + env(safe-area-inset-bottom));
+    left: 12px;
+    right: auto;
+    width: 420px;
+  }
+
+  .nav-footer {
+    left: 12px;
+    right: auto;
+    bottom: 12px;
+    width: 420px;
+    border-radius: var(--radius);
+  }
+
   .sheet {
     top: calc(var(--topbar-h) + 8px);
     left: 8px;

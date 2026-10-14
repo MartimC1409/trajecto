@@ -12,6 +12,7 @@
     "scripts",
     "vite.config.ts",
     "playwright.config.ts",
-    "security-headers.ts"
+    "security-headers.ts",
+    "vite-api-plugin.ts"
   ]
 }

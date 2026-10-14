@@ -19,7 +19,7 @@ vi.mock('./map/MapView', () => ({
   },
 }));
 
-const config: AppConfig = { geocoderUrl: '/g', tileJsonUrl: 'x', glyphsUrl: 'y' };
+const config: AppConfig = { geocoderUrl: '/g', routerUrl: '/r', tileJsonUrl: 'x', glyphsUrl: 'y' };
 
 function setup() {
   const storage = createMemoryStorage();
@@ -116,6 +116,37 @@ describe('App', () => {
     );
     await user.click(await screen.findByRole('button', { name: 'Fechar' }));
     expect(screen.queryByRole('heading', { name: 'Sé de Lisboa' })).toBeNull();
+  });
+
+  it('as definições de navegação guardam a voz e os valores de combustível', async () => {
+    const { user, services } = setup();
+    await user.click(screen.getByRole('button', { name: 'Abrir menu' }));
+    const menu = screen.getByRole('complementary', { name: 'Menu' });
+    await user.click(within(menu).getByRole('checkbox', { name: 'Instruções por voz' }));
+    expect(services.preferences.getSnapshot().voiceGuidance).toBe(false);
+
+    const price = within(menu).getByRole('textbox', { name: 'Preço do combustível (€/L)' });
+    expect(price).toHaveValue('1,75');
+    await user.clear(price);
+    await user.type(price, '1,92');
+    expect(services.preferences.getSnapshot().fuel.pricePerLitre).toBe(1.92);
+    await user.clear(price);
+    await user.type(price, 'abc');
+    expect(price).toHaveAttribute('aria-invalid', 'true');
+    expect(services.preferences.getSnapshot().fuel.pricePerLitre).toBe(1.92);
+
+    const car = within(menu).getByRole('textbox', { name: 'Consumo do carro (L/100 km)' });
+    await user.clear(car);
+    await user.type(car, '5.4');
+    expect(services.preferences.getSnapshot().fuel.carLitresPer100Km).toBe(5.4);
+    const moto = within(menu).getByRole('textbox', { name: 'Consumo da mota (L/100 km)' });
+    await user.clear(moto);
+    await user.type(moto, '3');
+    expect(services.preferences.getSnapshot().fuel.motorcycleLitresPer100Km).toBe(3);
+
+    // Apagar tudo repõe os valores mostrados.
+    services.preferences.reset();
+    await waitFor(() => expect(car).toHaveValue('6,5'));
   });
 
   it('o menu lista favoritos e histórico, e permite apagar', async () => {

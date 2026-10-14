@@ -4,6 +4,8 @@ import { z } from 'zod';
 import { DEFAULT_CENTER, DEFAULT_ZOOM } from './geo';
 import type { KeyValueStorage, PersistentStore } from './persistent-store';
 import { createPersistentStore } from './persistent-store';
+import type { RoutePreferences, TravelMode } from './routing';
+import { DEFAULT_ROUTE_PREFERENCES, TRAVEL_MODES } from './routing';
 
 export const PREFERENCES_STORAGE_KEY = 'trajecto:v1:preferences';
 
@@ -18,13 +20,41 @@ export interface MapViewState {
   readonly zoom: number;
 }
 
+/** Valores para estimar o custo de combustível (editáveis pelo utilizador). */
+export interface FuelPreferences {
+  readonly carLitresPer100Km: number;
+  readonly motorcycleLitresPer100Km: number;
+  readonly pricePerLitre: number;
+}
+
 export interface Preferences {
   readonly version: 1;
   readonly theme: ThemePreference;
   readonly language: Language;
   readonly historyEnabled: boolean;
   readonly lastView: MapViewState;
+  readonly travelMode: TravelMode;
+  readonly routePreferences: RoutePreferences;
+  readonly voiceGuidance: boolean;
+  readonly fuel: FuelPreferences;
 }
+
+/**
+ * Valores iniciais indicativos (não são dados oficiais): o utilizador deve ajustá-los ao seu
+ * veículo e ao preço atual (consultável em precoscombustiveis.dgeg.gov.pt).
+ */
+export const DEFAULT_FUEL: FuelPreferences = {
+  carLitresPer100Km: 6.5,
+  motorcycleLitresPer100Km: 4.5,
+  pricePerLitre: 1.75,
+};
+
+export const FUEL_LIMITS = {
+  litresPer100Km: { min: 0.5, max: 40 },
+  pricePerLitre: { min: 0.1, max: 10 },
+} as const;
+
+const litres = z.number().min(FUEL_LIMITS.litresPer100Km.min).max(FUEL_LIMITS.litresPer100Km.max);
 
 const preferencesSchema: z.ZodType<Preferences> = z.object({
   version: z.literal(1),
@@ -40,6 +70,26 @@ const preferencesSchema: z.ZodType<Preferences> = z.object({
       zoom: z.number().min(0).max(22),
     })
     .catch({ center: DEFAULT_CENTER, zoom: DEFAULT_ZOOM }),
+  travelMode: z.enum(TRAVEL_MODES).catch('car'),
+  routePreferences: z
+    .object({
+      avoidTolls: z.boolean(),
+      avoidHighways: z.boolean(),
+      avoidFerries: z.boolean(),
+      shortest: z.boolean(),
+    })
+    .catch(DEFAULT_ROUTE_PREFERENCES),
+  voiceGuidance: z.boolean().catch(true),
+  fuel: z
+    .object({
+      carLitresPer100Km: litres,
+      motorcycleLitresPer100Km: litres,
+      pricePerLitre: z
+        .number()
+        .min(FUEL_LIMITS.pricePerLitre.min)
+        .max(FUEL_LIMITS.pricePerLitre.max),
+    })
+    .catch(DEFAULT_FUEL),
 });
 
 export const DEFAULT_PREFERENCES: Preferences = {
@@ -48,6 +98,10 @@ export const DEFAULT_PREFERENCES: Preferences = {
   language: 'pt-PT',
   historyEnabled: true,
   lastView: { center: DEFAULT_CENTER, zoom: DEFAULT_ZOOM },
+  travelMode: 'car',
+  routePreferences: DEFAULT_ROUTE_PREFERENCES,
+  voiceGuidance: true,
+  fuel: DEFAULT_FUEL,
 };
 
 export interface PreferencesStore {
