@@ -37,16 +37,21 @@ qualidade e o armazenamento local, e verificar se as versões são compatíveis 
    - permite identificar a aplicação (User-Agent);
    - na Fase 2, permite trocar pela API própria sem mudar o cliente.
 9. **Segurança da versão de produção:** política de segurança de conteúdo (CSP) estrita, sem `unsafe-inline` nem `unsafe-eval`, e `X-Content-Type-Options`, `Referrer-Policy` e `Permissions-Policy`. Tudo testado nos testes ponta a ponta.
+   - Os testes registam cada `securitypolicyviolation` com elemento, ficheiro e linha.
+   - **zod em modo `jitless`:** o zod testa `new Function` ao criar esquemas, o que viola `script-src`. A opção é ativada no módulo `packages/core/src/csp.ts`, importado antes dos esquemas.
+   - **Sem `<select>`:** o WebKit (Safari) gera uma violação `style-src-attr` quando o React manipula um `<select>`. A escolha de língua usa botões de opção. Novos `<select>` exigem rever esta decisão.
 
 ## Consequências
 
 Positivas:
 
 - Erros de layout, de estilo do mapa e de acessibilidade são apanhados automaticamente.
-- A Fase 1 apanhou três erros reais:
+- A Fase 1 apanhou cinco erros reais:
   - uma expressão de zoom inválida no estilo do mapa;
   - o mapa com só 300 px de altura, por causa da ordem do CSS;
-  - os controlos do mapa por cima do campo de pesquisa no telemóvel.
+  - os controlos do mapa por cima do campo de pesquisa no telemóvel;
+  - a violação de CSP do zod;
+  - a violação de CSP do `<select>` no Safari.
 
 Negativas:
 

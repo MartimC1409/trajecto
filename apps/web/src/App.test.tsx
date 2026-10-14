@@ -167,7 +167,7 @@ describe('App', () => {
     expect(services.preferences.getSnapshot().historyEnabled).toBe(false);
     expect(screen.getByText('O histórico está desligado nas definições.')).toBeVisible();
 
-    await user.selectOptions(screen.getByRole('combobox', { name: 'Língua' }), 'en');
+    await user.click(screen.getByRole('radio', { name: 'English' }));
     await waitFor(() => expect(screen.getByRole('heading', { name: 'Settings' })).toBeVisible());
     expect(document.documentElement.lang).toBe('en');
 

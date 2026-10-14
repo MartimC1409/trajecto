@@ -104,7 +104,7 @@ test.describe('Trajecto (Fase 1)', () => {
     await page.getByRole('button', { name: 'Abrir menu' }).click();
     await page.getByRole('radio', { name: 'Escuro' }).check();
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
-    await page.getByRole('combobox', { name: 'Língua' }).selectOption('en');
+    await page.getByRole('radio', { name: 'English' }).check();
     await expect(page.locator('html')).toHaveAttribute('lang', 'en');
     await expect(page.getByRole('heading', { name: 'Settings' })).toBeVisible();
     await page.reload();

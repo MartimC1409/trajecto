@@ -175,23 +175,23 @@ export function Menu(props: MenuProps) {
             </label>
           ))}
         </fieldset>
-        <div className="field">
-          <label htmlFor={`${titleId}-lang`}>{t('settings.language')}</label>
-          <select
-            id={`${titleId}-lang`}
-            value={props.preferences.language}
-            onChange={(event) => {
-              const value = LANGUAGES.find((l) => l === event.target.value);
-              if (value) props.onSetLanguage(value);
-            }}
-          >
-            {LANGUAGES.map((lang) => (
-              <option key={lang} value={lang} lang={lang}>
-                {LANGUAGE_NAMES[lang]}
-              </option>
-            ))}
-          </select>
-        </div>
+        {/* Botões de opção em vez de <select>: com duas línguas são mais claros e evitam uma
+            violação da CSP que o WebKit (Safari) gera ao manipular elementos <select>. */}
+        <fieldset className="field">
+          <legend>{t('settings.language')}</legend>
+          {LANGUAGES.map((lang) => (
+            <label key={lang} className="radio">
+              <input
+                type="radio"
+                name={`${titleId}-lang`}
+                value={lang}
+                checked={props.preferences.language === lang}
+                onChange={() => props.onSetLanguage(lang)}
+              />
+              <span lang={lang}>{LANGUAGE_NAMES[lang]}</span>
+            </label>
+          ))}
+        </fieldset>
         <div className="field">
           <label className="checkbox">
             <input

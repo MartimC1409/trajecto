@@ -476,17 +476,6 @@ a {
   accent-color: var(--accent);
 }
 
-select {
-  min-height: var(--tap);
-  width: 100%;
-  padding: 0 10px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  background: var(--surface);
-  color: var(--text);
-  font: inherit;
-}
-
 .attributions {
   padding-left: 18px;
 }
