@@ -1,6 +1,6 @@
 # ADR 0002: Motor de rotas: Valhalla
 
-- **Estado:** Proposto
+- **Estado:** Aceite (2026-10-14)
 - **Data:** 2026-10-14
 
 ## Contexto

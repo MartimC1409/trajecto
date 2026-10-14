@@ -1,0 +1,20 @@
+# Dependências
+node_modules/
+
+# Resultados de build e testes
+dist/
+coverage/
+playwright-report/
+test-results/
+*.tsbuildinfo
+
+# Variáveis locais (nunca fazer commit de segredos)
+.env.local
+.env.*.local
+
+# Sistema e editores
+.DS_Store
+Thumbs.db
+.vscode/*
+!.vscode/extensions.json
+.idea/

@@ -1,6 +1,6 @@
 # ADR 0003: Mapa base e tiles
 
-- **Estado:** Proposto
+- **Estado:** Aceite (2026-10-14)
 - **Data:** 2026-10-14
 
 ## Contexto

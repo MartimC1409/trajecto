@@ -1,6 +1,6 @@
 # ADR 0001: Cliente web primeiro (PWA)
 
-- **Estado:** Proposto
+- **Estado:** Aceite (2026-10-14)
 - **Data:** 2026-10-14
 
 ## Contexto

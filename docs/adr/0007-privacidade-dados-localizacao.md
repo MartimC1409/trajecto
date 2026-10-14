@@ -1,6 +1,6 @@
 # ADR 0007: Privacidade dos dados de localização
 
-- **Estado:** Proposto
+- **Estado:** Aceite (2026-10-14)
 - **Data:** 2026-10-14
 
 ## Contexto

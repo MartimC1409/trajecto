@@ -1,6 +1,6 @@
 # ADR 0005: Custo zero: execução local e serviços públicos gratuitos
 
-- **Estado:** Proposto
+- **Estado:** Aceite (2026-10-14)
 - **Data:** 2026-10-14
 
 ## Contexto

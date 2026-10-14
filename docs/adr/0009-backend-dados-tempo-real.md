@@ -1,6 +1,6 @@
 # ADR 0009: Backend, dados e tempo real
 
-- **Estado:** Proposto
+- **Estado:** Aceite (2026-10-14)
 - **Data:** 2026-10-14
 
 ## Contexto

@@ -1,6 +1,6 @@
 # ADR 0006: Identidade: anónimo por omissão, conta opcional
 
-- **Estado:** Proposto
+- **Estado:** Aceite (2026-10-14)
 - **Data:** 2026-10-14
 
 ## Contexto
@@ -9,7 +9,8 @@ O utilizador quer uso anónimo, com conta opcional. Os requisitos originais pede
 
 ## Decisão
 
-- **Fases 1 a 4:** não há contas. Favoritos e histórico ficam no browser (IndexedDB), com opção de apagar tudo.
+- **Fases 1 a 4:** não há contas. Favoritos e histórico ficam no browser, com opção de apagar tudo.
+  - Na Fase 1 usa-se o `localStorage` (ver ADR 0010), em vez do IndexedDB inicialmente previsto.
 - **Identificador de instalação:** se for necessário, gera-se um identificador aleatório, sem ligação a dados pessoais.
 - **Fase 5 (votos e reputação):** introduz-se a conta opcional por **OIDC, Authorization Code com PKCE**. O fornecedor é escolhido nessa fase.
 - **Critérios para escolher o fornecedor:**

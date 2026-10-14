@@ -1,6 +1,6 @@
 # ADR 0004: Geocodificação: Photon
 
-- **Estado:** Proposto
+- **Estado:** Aceite (2026-10-14)
 - **Data:** 2026-10-14
 
 ## Contexto

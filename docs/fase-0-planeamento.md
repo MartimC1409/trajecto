@@ -2,7 +2,7 @@
 
 | Campo | Valor |
 |---|---|
-| Estado | **Respostas recebidas**: decisões em `docs/adr/` (estado "Proposto") aguardam confirmação final |
+| Estado | **Concluída**: decisões confirmadas a 2026-10-14 (ADR 0001 a 0009, estado "Aceite") |
 | Data | 2026-10-14 |
 | Âmbito | Portugal continental e ilhas, pt-PT, i18n preparada |
 | Versões | Verificadas a 2026-10-14 no registo npm, nas tags git dos projetos e nas notas de versão (ver secção 4.10) |
@@ -16,7 +16,7 @@
 | 1 | Uso pessoal; reportes de polícia incluídos | Os reportes de polícia ficam atrás de um interruptor de funcionalidade (ADR 0008). Antes de qualquer distribuição a terceiros é preciso revisão legal. Enquanto o uso for estritamente pessoal, o RGPD não se aplica (art. 2.º, n.º 2, alínea c): é a exceção de atividade pessoal ou doméstica. Mantemos na mesma a privacidade desde a conceção, para não ter de refazer nada se o uso se alargar. |
 | 2 | Prioridade à web | O cliente principal passa a ser uma **PWA** (aplicação web instalável) com Vite, React e MapLibre GL JS (ADR 0001). A app Expo / React Native fica adiada para depois da Fase 7. **Android Auto e CarPlay saem do âmbito** enquanto não houver app nativa, porque exigem código nativo. |
 | 3 | Sem orçamento | **Custo atual: 0 €.** Tudo corre no teu computador, com Docker quando for preciso (ADR 0005). No arranque usamos serviços públicos gratuitos dentro dos limites deles: tiles do OpenFreeMap e pesquisa no servidor público do Photon. Não há taxas de lojas de apps. |
-| 4 | Uso anónimo, conta opcional | Na Fase 1, favoritos e histórico ficam só no browser (IndexedDB). O fornecedor de identidade só é escolhido na Fase 5, quando votos e reputação precisarem dele (ADR 0006). |
+| 4 | Uso anónimo, conta opcional | Na Fase 1, favoritos e histórico ficam só no browser (`localStorage`, ver ADR 0010). O fornecedor de identidade só é escolhido na Fase 5, quando votos e reputação precisarem dele (ADR 0006). |
 | 5 | Nível básico | Cada fase traz instruções passo a passo por sistema operativo, poucos serviços novos de cada vez e explicação de cada comando. A Fase 1 não precisa de servidor próprio nem de Docker. |
 
 Limitações de uma app web para navegação (a confirmar na Fase 3 no teu telemóvel):

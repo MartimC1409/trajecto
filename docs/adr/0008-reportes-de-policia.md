@@ -1,6 +1,6 @@
 # ADR 0008: Reportes de polícia
 
-- **Estado:** Proposto
+- **Estado:** Aceite (2026-10-14)
 - **Data:** 2026-10-14
 
 ## Contexto
