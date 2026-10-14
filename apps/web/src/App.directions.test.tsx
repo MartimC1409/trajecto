@@ -56,6 +56,7 @@ describe('Direções', () => {
   it('calcula rotas a partir da localização atual e mostra-as no mapa', async () => {
     const { user, router } = setup();
     const panel = await openDirections(user);
+    expect(within(panel).getByRole('heading', { name: 'Direções' })).toHaveFocus();
     const options = await within(panel).findAllByRole('button', { pressed: false }, SLOW);
     expect(router.route).toHaveBeenCalledWith(
       {
@@ -232,6 +233,7 @@ describe('Direções', () => {
     const panel = await openDirections(user);
     await user.click(await within(panel).findByRole('button', { name: 'Simular' }, SLOW));
     const nav = screen.getByRole('region', { name: 'Navegação' });
+    expect(within(nav).getByRole('heading', { name: 'Navegação' })).toHaveFocus();
     expect(nav).toHaveTextContent('Vire à direita na Rua Alexandre Herculano.');
     expect(nav).toHaveTextContent('Simulação');
     expect(screen.queryByRole('search')).toBeNull();
@@ -251,6 +253,7 @@ describe('Direções', () => {
     await user.click(within(nav).getByRole('button', { name: 'Terminar' }));
     expect(screen.queryByRole('region', { name: 'Navegação' })).toBeNull();
     expect(screen.getByRole('region', { name: 'Direções' })).toBeVisible();
+    expect(screen.getByRole('heading', { name: 'Direções' })).toHaveFocus();
     expect(mapProps.current?.navigation).toBeNull();
   });
 });

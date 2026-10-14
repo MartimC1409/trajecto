@@ -77,6 +77,13 @@ Negativas:
 
 ## Alternativas consideradas
 
+- **Ferrostar 0.58.0 (`@stadiamaps/ferrostar`, BSD-3-Clause), previsto na secção 4.9 do plano:**
+  o pacote para browser é o núcleo em Rust compilado para WebAssembly (`ferrostar_bg.wasm`,
+  cerca de 0,9 MB por descompactar, verificado com `npm pack`). Usá-lo obrigaria a acrescentar
+  `'wasm-unsafe-eval'` à CSP e a carregar mais 0,9 MB. Não fiz o protótipo comparativo previsto
+  no plano: a decisão baseou-se na inspeção do pacote. Fica como plano B se o motor próprio
+  mostrar limites nos testes reais.
+
 - **Valhalla próprio na nuvem:** gratuito só em planos com poucos recursos; o grafo de
   Portugal precisa de vários GB de disco e de RAM para ser criado. Fica para a Fase 7.
 - **OSRM público (router.project-osrm.org):** só tem carro e as regras de uso proíbem uso

@@ -15,7 +15,7 @@ import {
   toLocalDateTime,
   TRAVEL_MODES,
 } from '@trajecto/core';
-import { useEffect, useId, useMemo, useState } from 'react';
+import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { formatClock, formatDistance, formatDuration, formatEuros } from '../format';
 import type { Endpoint, PlannerInput, PlannerState } from '../hooks/useRoutePlanner';
@@ -91,6 +91,12 @@ export function DirectionsPanel(props: DirectionsPanelProps) {
   const [editing, setEditing] = useState<Editing>(null);
   const [optionsOpen, setOptionsOpen] = useState(false);
   const [stepsOpen, setStepsOpen] = useState(false);
+  const headingRef = useRef<HTMLHeadingElement>(null);
+
+  // Ao abrir o painel (ou ao voltar da navegação), o foco vai para o título.
+  useEffect(() => {
+    if (!props.hidden) headingRef.current?.focus();
+  }, [props.hidden]);
 
   const mode = prefs.travelMode;
   const routePreferences = prefs.routePreferences;
@@ -231,7 +237,7 @@ export function DirectionsPanel(props: DirectionsPanelProps) {
       aria-busy={state.status === 'loading' || state.status === 'locating'}
     >
       <div className="sheet-header">
-        <h2 id={`${id}-title`} className="sheet-title">
+        <h2 id={`${id}-title`} ref={headingRef} tabIndex={-1} className="sheet-title">
           {t('directions.title')}
         </h2>
         <button

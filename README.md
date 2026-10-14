@@ -3,8 +3,18 @@
 Aplicação pessoal de mapas e navegação para Portugal, em português europeu.
 É uma aplicação web instalável no telemóvel (PWA).
 
-> **Estado: Fase 1 concluída, a aguardar validação.** Já há mapa, pesquisa, favoritos e histórico.
-> Rotas, navegação e alertas chegam nas fases seguintes ([plano](docs/fase-0-planeamento.md)).
+> **Estado: Fases 2 e 3 concluídas, a aguardar validação no telemóvel.** Já há mapa, pesquisa,
+> favoritos, rotas e navegação com voz. Alertas da comunidade chegam nas fases seguintes
+> ([plano](docs/fase-0-planeamento.md), [verificação das Fases 2 e 3](docs/fase-2-3/verificacao.md)).
+
+## Rotas e navegação (Fases 2 e 3)
+
+- **Direções:** carro, mota, a pé e bicicleta; partida na tua localização ou noutro local; até 8 paragens.
+- **Opções:** evitar portagens, autoestradas ou ferries; caminho mais curto; partir ou chegar a uma hora.
+- **Resultados:** até 3 rotas com duração, distância, hora de chegada, portagens e custo estimado de combustível.
+- **Navegação:** instruções por voz em português, faixas recomendadas, recálculo automático, ecrã sempre ligado.
+- **Simulação:** percorre a rota sem sair de casa (1× ou 4×).
+- **Serviço de rotas:** Valhalla público da FOSSGIS, sem garantias de disponibilidade ([ADR 0011](docs/adr/0011-rotas-e-navegacao.md)).
 
 ## O que já funciona (Fase 1)
 

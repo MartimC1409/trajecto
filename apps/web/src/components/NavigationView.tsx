@@ -1,5 +1,5 @@
 import { isArrivalManeuver } from '@trajecto/core';
-import { useId } from 'react';
+import { useEffect, useId, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { formatClock, formatDistance, formatDuration } from '../format';
 import type { NavigationState } from '../navigation/session';
@@ -27,6 +27,13 @@ export function NavigationView(props: NavigationViewProps) {
   const id = useId();
   const locale = i18n.language;
   const { state } = props;
+  const headingRef = useRef<HTMLHeadingElement>(null);
+
+  // O botão que iniciou a navegação desaparece: o foco passa para esta região.
+  useEffect(() => {
+    headingRef.current?.focus();
+  }, []);
+
   const { route, snapshot } = state;
   const maneuvers = route.maneuvers;
 
@@ -62,7 +69,7 @@ export function NavigationView(props: NavigationViewProps) {
 
   return (
     <section className="nav" aria-labelledby={`${id}-title`}>
-      <h2 id={`${id}-title`} className="visually-hidden">
+      <h2 id={`${id}-title`} ref={headingRef} tabIndex={-1} className="visually-hidden">
         {t('nav.label')}
       </h2>
 
