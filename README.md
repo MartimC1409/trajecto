@@ -80,3 +80,4 @@ Os teus favoritos, histórico e definições **nunca saem do dispositivo**.
 - [Fase 0: planeamento, stack e requisitos](docs/fase-0-planeamento.md)
 - [Decisões de arquitetura (ADR)](docs/adr/README.md)
 - [Guia de instalação no Windows](docs/fase-1/guia-instalacao-windows.md)
+- [Publicar no Vercel para testar no iPhone](docs/fase-1/deploy-vercel.md)
