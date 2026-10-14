@@ -11,17 +11,18 @@ Os resultados abaixo foram obtidos num ambiente Linux com Node.js 24.21.0 e pnpm
 | Lint (ESLint) | `pnpm lint` | ✅ sem erros nem avisos |
 | Formatação (Prettier) | `pnpm format:check` | ✅ |
 | Tipos (TypeScript 6.0.3) | `pnpm typecheck` | ✅ |
-| Testes unitários `@trajecto/core` | `pnpm test:coverage` | ✅ 62 testes; linhas 100 %, ramos 98,2 % (meta ≥80 %) |
-| Testes unitários `@trajecto/web` | `pnpm test:coverage` | ✅ 39 testes; linhas 96,4 %, ramos 82,8 % (meta ≥70 %) |
+| Testes unitários `@trajecto/core` | `pnpm test:coverage` | ✅ 63 testes; linhas 100 %, ramos 98,2 % (meta ≥80 %) |
+| Testes unitários `@trajecto/web` | `pnpm test:coverage` | ✅ 39 testes; linhas 96,4 %, ramos 83,1 % (meta ≥70 %) |
 | Build de produção | `pnpm build` | ✅ |
 | Testes ponta a ponta: Chromium desktop e Android | `pnpm test:e2e` | ✅ 21 passaram, 1 ignorado de propósito (o teste de toque não se aplica ao desktop) |
+| Testes ponta a ponta no CI: desktop, Android e iPhone (WebKit) | GitHub Actions | ✅ 32 passaram, 1 ignorado ([execução 38542517571](https://github.com/MartimC1409/trajecto/actions/runs/38542517571)) |
 | Acessibilidade WCAG 2.2 AA (axe-core) | incluído no `pnpm test:e2e` | ✅ 0 violações nos temas claro e escuro, com resultados de pesquisa, painel do local e menu abertos |
-| CSP e cabeçalhos de segurança | incluído no `pnpm test:e2e` | ✅ sem violações de CSP |
+| CSP e cabeçalhos de segurança | incluído no `pnpm test:e2e` | ✅ 0 violações registadas (`securitypolicyviolation`) em Chromium e WebKit |
 | Proxy da pesquisa (servidor local de eco) | manual | ✅ User-Agent enviado; `Cookie` e `Referer` removidos; POST recusado com 405 |
 
 ### Não verificado aqui
 
-- **WebKit (Safari de iPhone):** não está instalado neste ambiente. Corre no CI (`E2E_WEBKIT=1`) e no Windows.
+- **WebKit (Safari de iPhone):** não está instalado neste ambiente, mas foi verificado no CI (ver tabela).
 - **Tiles reais e Photon real:** a rede deste ambiente bloqueia os dois serviços. Os testes usam respostas locais.
   A verificação com os serviços reais é o item 2 da lista abaixo.
 
