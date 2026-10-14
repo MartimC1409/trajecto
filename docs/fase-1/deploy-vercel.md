@@ -21,6 +21,8 @@ O plano gratuito (Hobby) é só para uso pessoal e não comercial, o que corresp
    Isto faz o Vercel usar o pnpm 12.11.2 indicado no `package.json`.
 5. Carrega em **Deploy**.
 
+> **Erro `No Output Directory named "public" found`:** o Root Directory não ficou definido como `apps/web`. O Vercel construiu a partir da raiz do repositório e não leu o `apps/web/vercel.json`. Corrige em Settings → Build and Deployment → Root Directory → `apps/web` e volta a publicar.
+
 ## 2. Escolher o ramo a publicar
 
 O Vercel publica em produção o ramo `main`. Enquanto o trabalho estiver noutro ramo, tens duas opções:
@@ -31,9 +33,11 @@ O Vercel publica em produção o ramo `main`. Enquanto o trabalho estiver noutro
 ## 3. Abrir no iPhone
 
 1. No Safari, abre o URL de produção que o Vercel mostra (algo como `https://trajecto-xxxx.vercel.app`).
-   - O URL de produção é público. Os URLs de pré-visualização (com `-git-` ou um código no nome) pedem login no Vercel.
+   - O acesso depende da proteção do projeto (Settings → Deployment Protection → Vercel Authentication):
+     - "Standard Protection": o URL de produção é público e só as pré-visualizações pedem login no Vercel;
+     - "All Deployments" (opção `all_except_custom_domains`, a que a equipa `martim` tem): todos os URLs `*.vercel.app` pedem login, incluindo o de produção.
 2. Para instalar: botão Partilhar → **Adicionar ao ecrã principal**.
-   - Usa o URL de produção. A app instalada não partilha o login do Safari, por isso não abriria um URL de pré-visualização.
+   - Usa um URL que não peça login. A app instalada não partilha o login do Safari, por isso mostraria o ecrã de login do Vercel.
 3. Com HTTPS, o botão **Mostrar a minha localização** passa a funcionar. O Safari pede autorização na primeira vez.
 
 ## Verificar depois de publicar
