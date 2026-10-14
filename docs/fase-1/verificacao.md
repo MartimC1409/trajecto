@@ -30,7 +30,7 @@ Os resultados abaixo foram obtidos num ambiente Linux com Node.js 24.21.0 e pnpm
 1. [ ] Seguir o [guia de instalação no Windows](guia-instalacao-windows.md) até `pnpm dev` funcionar.
 2. [ ] O mapa de Portugal aparece com ruas, nomes e rios. Em zoom 15 ou mais, com o mapa inclinado, os edifícios aparecem em 3D.
 3. [ ] Pesquisar "Rua Augusta", "Sé de Braga" e um código postal (por exemplo "4000-322"):
-   - os resultados aparecem em menos de 1 s;
+   - os resultados aparecem em menos de 1 s depois de parares de escrever. Isto inclui 0,3 s de espera intencional; a meta da Fase 0 é p95 < 500 ms só para o pedido;
    - clicar ou carregar em Enter centra o mapa.
 4. [ ] Clicar no mapa mostra a morada; "Que sítio é este?" mostra a morada do centro.
 5. [ ] Guardar Casa, Trabalho e um Favorito; recarregar a página; continuam lá.

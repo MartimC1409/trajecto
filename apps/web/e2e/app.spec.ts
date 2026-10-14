@@ -1,12 +1,13 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
-import { isCspViolation, mockServices } from './support';
+import { isCspViolation, mockServices, recordCspViolations } from './support';
 
 const WCAG_TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'];
 
 test.describe('Trajecto (Fase 1)', () => {
   test('carrega o mapa em pt-PT, com atribuições e sem violações de CSP', async ({ page }) => {
     const mocks = await mockServices(page);
+    const cspViolations = await recordCspViolations(page);
     await page.goto('/');
     await expect(page).toHaveTitle('Trajecto');
     await expect(page.locator('html')).toHaveAttribute('lang', 'pt-PT');
@@ -16,6 +17,9 @@ test.describe('Trajecto (Fase 1)', () => {
     await expect(attribution).toContainText('© OpenStreetMap');
     await expect(attribution).toContainText('© OpenMapTiles');
     await expect(page.getByRole('button', { name: 'Aproximar' })).toBeVisible();
+    const violations = await cspViolations();
+    // A mensagem de erro inclui a origem (elemento, ficheiro, linha) para facilitar o diagnóstico.
+    expect(violations, JSON.stringify(violations, null, 2)).toEqual([]);
     expect(mocks.consoleErrors.filter(isCspViolation)).toEqual([]);
   });
 

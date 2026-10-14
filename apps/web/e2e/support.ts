@@ -13,6 +13,47 @@ export interface MockState {
  * - tiles do OpenFreeMap (TileJSON com tiles vazios).
  * Assim os testes são rápidos, repetíveis e não sobrecarregam serviços públicos.
  */
+/** Detalhes de uma violação da política de segurança de conteúdo, registados pelo browser. */
+export interface CspViolation {
+  readonly directive: string;
+  readonly blockedURI: string;
+  readonly sourceFile: string;
+  readonly lineNumber: number;
+  readonly sample: string;
+  readonly target: string;
+}
+
+declare global {
+  interface Window {
+    __cspViolations?: CspViolation[];
+  }
+}
+
+/** Regista, dentro da página, cada violação de CSP com a sua origem (elemento, ficheiro e linha). */
+export async function recordCspViolations(page: Page): Promise<() => Promise<CspViolation[]>> {
+  await page.addInitScript(() => {
+    window.__cspViolations = [];
+    document.addEventListener('securitypolicyviolation', (event) => {
+      const target = event.target;
+      let description = String(target);
+      if (target instanceof Element) {
+        description = `${target.tagName.toLowerCase()}${target.className ? `.${String(target.className)}` : ''}`;
+      } else if (target instanceof Document) {
+        description = 'document';
+      }
+      window.__cspViolations?.push({
+        directive: event.effectiveDirective,
+        blockedURI: event.blockedURI,
+        sourceFile: event.sourceFile,
+        lineNumber: event.lineNumber,
+        sample: event.sample,
+        target: description,
+      });
+    });
+  });
+  return () => page.evaluate(() => window.__cspViolations ?? []);
+}
+
 export async function mockServices(
   page: Page,
   options: { searchStatus?: number } = {},

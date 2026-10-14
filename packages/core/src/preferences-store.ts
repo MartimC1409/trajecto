@@ -1,3 +1,5 @@
+// Tem de ser o primeiro import: desliga o `eval` do zod antes de criar esquemas (CSP).
+import './csp';
 import { z } from 'zod';
 import { DEFAULT_CENTER, DEFAULT_ZOOM } from './geo';
 import type { KeyValueStorage, PersistentStore } from './persistent-store';
