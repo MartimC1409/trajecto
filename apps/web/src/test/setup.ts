@@ -1,11 +1,14 @@
-import '@testing-library/jest-dom/vitest';
-import { cleanup } from '@testing-library/react';
 import { afterEach } from 'vitest';
-import { initI18n } from '../i18n';
 
-await initI18n('pt-PT');
+// Os testes da função do servidor (api/) correm em ambiente Node, sem DOM.
+if (typeof document !== 'undefined') {
+  await import('@testing-library/jest-dom/vitest');
+  const { cleanup } = await import('@testing-library/react');
+  const { initI18n } = await import('../i18n');
+  await initI18n('pt-PT');
 
-afterEach(() => {
-  cleanup();
-  window.localStorage.clear();
-});
+  afterEach(() => {
+    cleanup();
+    window.localStorage.clear();
+  });
+}
