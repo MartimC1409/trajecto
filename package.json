@@ -1,0 +1,34 @@
+{
+  "name": "trajecto",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Trajecto: mapas e navegação para Portugal (projeto pessoal).",
+  "packageManager": "pnpm@12.11.2",
+  "engines": {
+    "node": ">=24.21.0"
+  },
+  "scripts": {
+    "dev": "pnpm --filter @trajecto/web dev",
+    "dev:lan": "pnpm --filter @trajecto/web dev:lan",
+    "build": "pnpm -r build",
+    "preview": "pnpm --filter @trajecto/web preview",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "typecheck": "pnpm -r typecheck",
+    "test": "pnpm -r test",
+    "test:coverage": "pnpm -r test:coverage",
+    "test:e2e": "pnpm --filter @trajecto/web test:e2e",
+    "check": "pnpm lint && pnpm format:check && pnpm typecheck && pnpm test:coverage && pnpm build"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "eslint": "10.12.0",
+    "eslint-plugin-react-hooks": "7.1.1",
+    "globals": "17.13.0",
+    "prettier": "3.9.10",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.71.2"
+  }
+}

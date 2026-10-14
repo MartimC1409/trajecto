@@ -1,0 +1,4 @@
+# Normaliza finais de linha para LF (evita problemas entre Windows e Linux/CI)
+* text=auto eol=lf
+*.png binary
+*.ico binary
