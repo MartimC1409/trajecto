@@ -2,10 +2,34 @@
 
 | Campo | Valor |
 |---|---|
-| Estado | **Proposta**: aguarda respostas às perguntas da secção 2 |
+| Estado | **Respostas recebidas**: decisões em `docs/adr/` (estado "Proposto") aguardam confirmação final |
 | Data | 2026-10-14 |
 | Âmbito | Portugal continental e ilhas, pt-PT, i18n preparada |
 | Versões | Verificadas a 2026-10-14 no registo npm, nas tags git dos projetos e nas notas de versão (ver secção 4.10) |
+
+---
+
+## 0. Respostas recebidas e impacto no plano
+
+| # | Resposta | Impacto |
+|---|---|---|
+| 1 | Uso pessoal; reportes de polícia incluídos | Os reportes de polícia ficam atrás de um interruptor de funcionalidade (ADR 0008). Antes de qualquer distribuição a terceiros é preciso revisão legal. Enquanto o uso for estritamente pessoal, o RGPD não se aplica (art. 2.º, n.º 2, alínea c): é a exceção de atividade pessoal ou doméstica. Mantemos na mesma a privacidade desde a conceção, para não ter de refazer nada se o uso se alargar. |
+| 2 | Prioridade à web | O cliente principal passa a ser uma **PWA** (aplicação web instalável) com Vite, React e MapLibre GL JS (ADR 0001). A app Expo / React Native fica adiada para depois da Fase 7. **Android Auto e CarPlay saem do âmbito** enquanto não houver app nativa, porque exigem código nativo. |
+| 3 | Sem orçamento | **Custo atual: 0 €.** Tudo corre no teu computador, com Docker quando for preciso (ADR 0005). No arranque usamos serviços públicos gratuitos dentro dos limites deles: tiles do OpenFreeMap e pesquisa no servidor público do Photon. Não há taxas de lojas de apps. |
+| 4 | Uso anónimo, conta opcional | Na Fase 1, favoritos e histórico ficam só no browser (IndexedDB). O fornecedor de identidade só é escolhido na Fase 5, quando votos e reputação precisarem dele (ADR 0006). |
+| 5 | Nível básico | Cada fase traz instruções passo a passo por sistema operativo, poucos serviços novos de cada vez e explicação de cada comando. A Fase 1 não precisa de servidor próprio nem de Docker. |
+
+Limitações de uma app web para navegação (a confirmar na Fase 3 no teu telemóvel):
+
+- **Geolocalização:** o browser só a fornece em HTTPS ou em `localhost`. Para usar no telemóvel será preciso um endereço HTTPS.
+- **Ecrã ligado:** com o ecrã desligado ou o browser em segundo plano, a localização deixa de chegar. Durante a navegação o ecrã tem de estar ligado, o que a Screen Wake Lock API permite. Isto gasta mais bateria, por isso convém um carregador no carro.
+- **Voz:** usa a Web Speech API (`speechSynthesis`). A existência e a qualidade de uma voz pt-PT dependem do sistema operativo.
+- **Notificações push:** no iPhone só funcionam com a app adicionada ao ecrã principal.
+- **Offline:** usa Service Worker e armazenamento do browser, com quotas que variam por browser.
+
+Boa notícia para a web: o núcleo do Ferrostar está publicado no npm para browser (`@stadiamaps/ferrostar` 0.58.0, BSD-3-Clause, com componentes web). Será candidato na Fase 3.
+
+Sugestão de ordem: com um só utilizador, o trânsito calculado a partir dos teus próprios dados (Fase 4) e os reportes comunitários (Fase 5) trazem pouco valor real. Os transportes públicos (Fase 6) usam dados reais desde o primeiro dia. Podes antecipar a Fase 6, se quiseres. Por omissão mantenho a ordem original.
 
 ---
 
@@ -93,7 +117,7 @@ Para cada pergunta indico uma **resposta por omissão**. Se concordares, basta r
 | Base de dados | PostgreSQL + PostGIS | 18.6 + 3.6.4 | PostgreSQL / GPL-2.0+ (extensão usada como serviço) |
 | Cache, limites de frequência, filas | Valkey (Streams) | 9.1.2 | BSD-3-Clause |
 | App móvel | Expo SDK 57 (`expo` 57.0.28) → React Native 0.86.3, React 19.2.3 | ver coluna anterior | MIT |
-| Web | Vite + `@vitejs/plugin-react`, React 19.2.3 (igual ao do telemóvel) | 8.3.4 / 6.1.2 | MIT |
+| Web | Vite + `@vitejs/plugin-react`, React + React DOM | 8.3.4 / 6.1.2 / 19.3.0 | MIT |
 | i18n | i18next | 26.4.4 | MIT |
 | Monorepo | pnpm workspaces | 12.11.2 | MIT |
 | Lint | ESLint + typescript-eslint | 10.12.0 / 8.71.2 | MIT |
@@ -212,7 +236,7 @@ Na Fase 3 faço um protótipo curto com cada opção e decido com base nos dados
 - **`@maplibre/maplibre-react-native` 11.5.0** exige `react-native >=0.80.0`, `react >=19.1.0` e `expo >=54` (opcional) → ✅ compatível.
 - **TypeScript 6.0.3:** o `typescript-eslint` 8.71.2 exige `typescript >=4.8.4 <6.1.0`, por isso o TypeScript 7.0.2 partiria o lint. O `i18next` 26.4.4 aceita TS ^5, ^6 ou ^7 → ✅.
 - **Vite 8.3.4 e ESLint 10.12.0** exigem Node ≥22.12 ou ≥24 → ✅ com Node 24.21.0 LTS. O Node 26 ainda não é LTS.
-- **React 19.2.3 na web**, igual ao do telemóvel, para evitar versões duplicadas no monorepo. O React 19.3.0 já existe, mas fica fora por agora.
+- **React 19.3.0 na web** (`react-dom` 19.3.0 exige `react ^19.3.0` → ✅). A proposta inicial era 19.2.3, para alinhar com o Expo 57. Como a app nativa foi adiada (secção 0), esse alinhamento deixou de ser necessário. Quando a app nativa existir, o monorepo alinha pela versão do Expo dessa altura.
 - **PostGIS 3.6.4** requer PostgreSQL 12 a 18 → ✅ com PostgreSQL 18.6. O PostgreSQL 19 ainda está em RC.
 - **`@g4rb4g3/react-native-carplay` 2.7.22** só declara RN até 0.79 → ❌ excluído.
 
@@ -386,6 +410,8 @@ Segurança:
 - Cerca de 5 rotas por utilizador ativo por dia.
 - Lotes de pontos a cada 10 s durante a navegação.
 
+**Custo atual (uso pessoal): 0 €** (secção 0). A tabela abaixo só se aplica se um dia o Trajecto for aberto a outras pessoas.
+
 **Atenção:** a Hetzner subiu preços em abril e em junho de 2026, com algumas linhas a mais do que duplicar segundo fontes secundárias, e alguns planos têm aparecido como indisponíveis. **Confirma sempre os preços na página oficial antes de contratar.** Os valores abaixo são intervalos, não orçamentos.
 
 | Componente | 100 utilizadores | 10 000 utilizadores | 100 000 utilizadores |
@@ -414,13 +440,14 @@ Segurança:
 | Fase | Entregável | Critérios de conclusão |
 |---|---|---|
 | **0** | Este documento + ADR 0001–0008 depois das tuas respostas | Perguntas respondidas; stack aprovada; ADR escritos |
-| **1** | Monorepo, Docker Compose, mapa web e telemóvel (claro e escuro), pesquisa com autocompletar, geocodificação inversa, favoritos e histórico locais, atribuições | `docker compose up` arranca tudo; pesquisa com p95 abaixo de 300 ms em local; atribuição OSM visível; testes verdes com ≥80 % de cobertura na lógica de domínio; verificação WCAG AA dos ecrãs |
+| **1** | Monorepo, PWA web com mapa (claro e escuro, rotação, inclinação), pesquisa com autocompletar, geocodificação inversa, favoritos e histórico locais com opção de apagar, atribuições | `pnpm dev` arranca a app sem servidor próprio; pesquisa com p95 abaixo de 500 ms usando o Photon público, com no máximo 1 pedido a cada 300 ms (*debounce*); atribuições OSM e OpenMapTiles visíveis; testes verdes com ≥80 % de cobertura na lógica de domínio; verificação WCAG AA dos ecrãs |
 | **2** | Valhalla Portugal; `POST /v1/routes` para carro, mota, a pé e bicicleta; alternativas, preferências, paragens múltiplas, hora de partida ou chegada, custo de combustível | p95 abaixo de 2 s para rotas de até 300 km em teste k6 com 20 pedidos por segundo; contrato OpenAPI testado |
 | **3** | Navegação passo a passo, voz pt-PT, faixas e limites (quando existirem no OSM), modo de condução, reencaminhamento ao sair da rota | Reencaminhamento em menos de 3 s desde a deteção; testes de simulação de percurso (GPX) em CI; interface de condução revista quanto a distração |
 | **4** | Ingestão anónima de pontos, *map matching*, agregação, `traffic.tar`, tempos de chegada com trânsito, meteorologia na rota | Do ponto ao efeito na rota em menos de 10 s (p95) em teste de carga; pontos em bruto apagados conforme o ADR |
 | **5** | Reportes, votos, expiração, reputação, limites de frequência, moderação, alertas por WebSocket e push com a distância | Testes de abuso (spam e GPS falso simulado) passam; expiração automática verificada; painel de moderação mínimo |
 | **6** | MOTIS com GTFS e GTFS-RT portugueses disponíveis; rotas multimodais | Pelo menos Carris Metropolitana e Metro de Lisboa integrados; atrasos visíveis quando houver tempo real |
-| **7** | Mapas offline por região, otimização de bateria e dados, testes finais, revisão de segurança, publicação, protótipo Android Auto | Orçamento de bateria e dados medido; OWASP e MASVS revistos; política de privacidade publicada; beta nas lojas |
+| **7** | Mapas offline por região, otimização de bateria e dados, testes finais, revisão de segurança, publicação da PWA em alojamento gratuito | Orçamento de bateria e dados medido; OWASP revisto; PWA instalável e a funcionar sem rede para mapas transferidos |
+| **8 (futuro)** | App nativa Expo / React Native e protótipo Android Auto / CarPlay | Só depois da Fase 7 e se ainda fizer sentido |
 
 Metas de qualidade transversais:
 
@@ -459,15 +486,15 @@ Metas de qualidade transversais:
 
 ## 12. Checklist de verificação da Fase 0
 
-- [ ] Respondeste às 5 perguntas da secção 2, ou aceitaste as respostas por omissão.
+- [x] Respondeste às perguntas da secção 2 (respostas na secção 0).
 - [ ] Concordas com o Valhalla como motor de rotas (4.2).
-- [ ] Concordas com Expo / React Native no telemóvel e Vite + React na web (4.3).
+- [ ] Concordas com a PWA web primeiro e a app nativa adiada (secção 0, ADR 0001).
 - [ ] Concordas com Valkey Streams para começar, com migração possível para NATS (4.4).
 - [ ] Concordas com o Photon na pesquisa (4.5) e com OpenFreeMap → PMTiles próprios nos tiles (4.6).
-- [ ] Escolheste o fornecedor de identidade (4.8).
+- [x] Identidade: anónimo com conta opcional; o fornecedor fica para a Fase 5 (ADR 0006).
 - [ ] Aceitas as decisões de privacidade da secção 7, em especial o *opt-in* para dados de velocidade.
-- [ ] Os intervalos de custo da secção 8 cabem no teu orçamento.
-- [ ] Aceitas os ajustes de âmbito da secção 3: portagens só como "tem portagens" na Fase 2; offline apenas para mapas; Android Auto e CarPlay como objetivo planeado.
+- [x] Custo zero por agora (ADR 0005).
+- [ ] Aceitas os ajustes de âmbito da secção 3 e da secção 0: portagens só como "tem portagens" na Fase 2; offline apenas para mapas; Android Auto e CarPlay fora do âmbito enquanto não houver app nativa.
 
 Não há código nesta fase, logo não há testes automáticos a correr. A verificação consiste em validar as decisões acima.
 
@@ -475,18 +502,19 @@ Não há código nesta fase, logo não há testes automáticos a correr. A verif
 
 ## 13. Próximo passo
 
-Depois das tuas respostas:
+Os ADR estão em `docs/adr/` (índice em `docs/adr/README.md`), todos no estado "Proposto":
 
-1. Escrevo os ADR em `docs/adr/`:
-   - 0001 Motor de rotas
-   - 0002 Cliente móvel e web
-   - 0003 Tiles
-   - 0004 Geocodificação
-   - 0005 Tempo real e fila
-   - 0006 Autenticação
-   - 0007 Privacidade dos dados de velocidade
-   - 0008 Alojamento
-2. Arranco a **Fase 1** (monorepo, Docker Compose, mapa, pesquisa), com código completo, instruções e testes.
+- 0001 Cliente web primeiro (PWA)
+- 0002 Motor de rotas: Valhalla
+- 0003 Mapa base e tiles
+- 0004 Geocodificação: Photon
+- 0005 Custo zero: execução local e serviços públicos gratuitos
+- 0006 Identidade: anónimo por omissão, conta opcional
+- 0007 Privacidade dos dados de localização
+- 0008 Reportes de polícia
+- 0009 Backend, dados e tempo real
+
+Quando confirmares, passo-os a "Aceite" e arranco a **Fase 1** (monorepo, PWA web, mapa, pesquisa), com código completo, instruções passo a passo e testes.
 
 ---
 
