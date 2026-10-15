@@ -9,12 +9,19 @@
  */
 import { mkdir, writeFile } from 'node:fs/promises';
 import type { LngLat, RouteRequest } from '@trajecto/core';
-import { createValhallaRouter, createWeatherProvider, parseValhallaResponse } from '@trajecto/core';
+import {
+  createValhallaRouter,
+  createWeatherProvider,
+  parseSpeedCameras,
+  parseValhallaResponse,
+} from '@trajecto/core';
 import { describe, expect, it } from 'vitest';
 import { handleRouteRequest } from '../../api/route';
 import { handleWeatherRequest } from '../../api/weather';
 
 const LIVE = process.env.TRAJECTO_LIVE === '1';
+/** Endereço público de produção (por exemplo https://trajecto-psi.vercel.app), para testar o site real. */
+const PRODUCTION = process.env.TRAJECTO_PRODUCTION_URL ?? '';
 const OUTPUT = new URL('../../live-output/', import.meta.url);
 
 const LISBOA: LngLat = { lng: -9.1393, lat: 38.7223 };
@@ -128,5 +135,49 @@ describe.skipIf(!LIVE)('serviços reais', () => {
     console.warn(`meteorologia: HTTP ${String(last.status)}, ${String(forecasts.length)} ponto(s)`);
     expect(forecasts).toHaveLength(points.length);
     expect(forecasts[0]?.times.length).toBeGreaterThan(24);
+  }, 60_000);
+});
+
+/**
+ * O site publicado no Vercel: tem de abrir sem login e as funções têm de chegar aos serviços
+ * a partir dos servidores do Vercel (o IP de saída é diferente do do GitHub).
+ */
+describe.skipIf(!LIVE || !PRODUCTION)('produção', () => {
+  const at = (path: string) => new URL(path, PRODUCTION);
+
+  it('a página abre sem login e tem a política de segurança', async () => {
+    const response = await fetch(at('/'), { redirect: 'manual' });
+    console.warn(`produção /: HTTP ${String(response.status)}`);
+    expect(response.status).toBe(200);
+    expect(response.headers.get('content-security-policy')).toContain("default-src 'self'");
+    expect(await response.text()).toContain('<div id="root">');
+  }, 30_000);
+
+  it('o ficheiro de radares está publicado com a licença', async () => {
+    const response = await fetch(at('/data/speed-cameras.json'));
+    expect(response.status).toBe(200);
+    const body: unknown = await response.json();
+    expect(body).toMatchObject({ license: 'ODbL-1.0' });
+    console.warn(`produção radares: ${String(parseSpeedCameras(body).length)}`);
+    expect(parseSpeedCameras(body).length).toBeGreaterThan(100);
+  }, 30_000);
+
+  it('rotas através da função do Vercel', async () => {
+    const router = createValhallaRouter({ url: at('/api/route').href });
+    const routes = await router.route({
+      mode: 'car',
+      waypoints: [LISBOA, BAIXA],
+      alternatives: 1,
+      language: 'pt-PT',
+    });
+    console.warn(`produção rotas: ${String(routes.length)} rota(s)`);
+    expect(routes[0]?.maneuvers.length).toBeGreaterThan(1);
+    await pause();
+  }, 60_000);
+
+  it('meteorologia através da função do Vercel', async () => {
+    const weather = createWeatherProvider({ url: at('/api/weather').href });
+    const forecasts = await weather.forecast([LISBOA, PORTO]);
+    expect(forecasts).toHaveLength(2);
   }, 60_000);
 });

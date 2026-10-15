@@ -12,6 +12,7 @@ on:
       - 'apps/web/src/server/live-services.test.ts'
       - 'packages/core/src/valhalla.ts'
       - 'packages/core/src/weather.ts'
+      - 'packages/core/src/transit.ts'
   schedule:
     # Uma vez por semana (segunda-feira, 05:23 UTC).
     - cron: '23 5 * * 1'
@@ -46,6 +47,8 @@ jobs:
         run: pnpm --filter @trajecto/web exec vitest run src/server/live-services.test.ts
         env:
           TRAJECTO_LIVE: '1'
+          # Site publicado (deve abrir sem login).
+          TRAJECTO_PRODUCTION_URL: https://trajecto-psi.vercel.app
 
       - name: Respostas recebidas
         if: always()
