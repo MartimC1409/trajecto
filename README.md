@@ -3,9 +3,16 @@
 Aplicação pessoal de mapas e navegação para Portugal, em português europeu.
 É uma aplicação web instalável no telemóvel (PWA).
 
-> **Estado: Fases 2 e 3 concluídas, a aguardar validação no telemóvel.** Já há mapa, pesquisa,
-> favoritos, rotas e navegação com voz. Alertas da comunidade chegam nas fases seguintes
-> ([plano](docs/fase-0-planeamento.md), [verificação das Fases 2 e 3](docs/fase-2-3/verificacao.md)).
+> **Estado: Fase 4 concluída, a aguardar validação no telemóvel.** Já há mapa, pesquisa,
+> favoritos, rotas, navegação com voz e meteorologia na rota. Alertas chegam nas fases seguintes
+> ([plano](docs/fase-0-planeamento.md), [Fases 2 e 3](docs/fase-2-3/verificacao.md),
+> [Fase 4](docs/fase-4/verificacao.md)).
+
+## Meteorologia na rota (Fase 4)
+
+- **Previsão à hora de passagem** em pontos ao longo da rota (Open-Meteo, CC BY 4.0).
+- **Avisos:** chuva forte, trovoada, neve, gelo, nevoeiro, vento forte e calor, com hora e km.
+- **Sem trânsito:** os tempos são estimados sem trânsito ([ADR 0012](docs/adr/0012-meteorologia-na-rota.md)).
 
 ## Rotas e navegação (Fases 2 e 3)
 
