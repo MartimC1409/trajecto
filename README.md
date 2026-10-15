@@ -8,6 +8,13 @@ Aplicação pessoal de mapas e navegação para Portugal, em português europeu.
 > ([plano](docs/fase-0-planeamento.md), [Fases 2 e 3](docs/fase-2-3/verificacao.md),
 > [Fase 4](docs/fase-4/verificacao.md), [Fase 5](docs/fase-5/verificacao.md)).
 
+## Mapa detalhado
+
+- **Locais com ícones** por categoria (restaurantes, farmácias, estações, combustível…); ao tocar,
+  mostra o nome, a categoria e a morada.
+- **Relevo do terreno**, setas de sentido único, pontes, ciclovias, metro e elétrico, escudos das
+  estradas, saídas, rios, parques e serras com altitude ([ADR 0014](docs/adr/0014-mapa-detalhado-e-relevo.md)).
+
 ## Reportes e radares (Fase 5)
 
 - **Reportar:** polícia, acidente, perigo, trânsito parado, obras e estrada cortada, durante a
@@ -93,6 +100,7 @@ ficheiro: as variáveis `VITE_*` ficam visíveis no browser.
 | [Valhalla (FOSSGIS)](https://valhalla1.openstreetmap.de) | Rotas | Servidor público, uso justo (1 pedido por segundo), sem garantias; passa pela função `/api/route` |
 | [Open-Meteo](https://open-meteo.com) | Meteorologia na rota | Gratuito só para uso não comercial, < 10 000 pedidos/dia; CC BY 4.0; passa pela função `/api/weather` |
 | [Overpass API](https://overpass-api.de) | Radares fixos (OSM) | Só uma consulta por mês, no GitHub Actions; a app nunca o consulta |
+| [Mapterhorn](https://mapterhorn.com) | Relevo do terreno (opcional) | Gratuito; recebe o IP e as zonas vistas (guarda até 30 dias); dados DGT (CC BY 4.0) e Copernicus; desliga-se no menu |
 
 Estes serviços recebem o teu endereço IP, o que pesquisas e as zonas do mapa que vês.
 Os teus favoritos, histórico e definições **nunca saem do dispositivo**.
@@ -104,6 +112,9 @@ Os teus favoritos, histórico e definições **nunca saem do dispositivo**.
 - Radares fixos (`apps/web/public/data/speed-cameras.json`): © contribuidores do OpenStreetMap,
   [ODbL 1.0](https://opendatacommons.org/licenses/odbl/1-0/).
 - Meteorologia: [Open-Meteo.com](https://open-meteo.com), CC BY 4.0.
+- Relevo: [Mapterhorn](https://mapterhorn.com/attribution), com dados da Direção-Geral do Território
+  (CC BY 4.0) e Copernicus WorldDEM-30 (© DLR e.V. 2010-2014 e © Airbus Defence and Space GmbH
+  2014-2018, fornecido no âmbito do COPERNICUS pela União Europeia e pela ESA).
 - Fontes Noto Sans: SIL Open Font License 1.1.
 
 ## Licença

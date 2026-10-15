@@ -80,9 +80,11 @@ for (const spec of BROWSERS) {
     );
     await page.goto(baseUrl, { waitUntil: 'load' });
     await page.waitForLoadState('networkidle', { timeout: 30_000 }).catch(() => undefined);
-    await page.waitForTimeout(4000);
+    // O WebKit sem placa gráfica desenha mais devagar.
+    await page.waitForTimeout(spec.name === 'iphone' ? 10_000 : 4000);
     result.csp = await page.evaluate(() => window.__csp ?? []);
-    await page.screenshot({ path: `${outDir}/${spec.name}-${place.name}.png` });
+    // caret 'initial': sem o estilo que o Playwright injeta (a CSP do WebKit recusava-o).
+    await page.screenshot({ path: `${outDir}/${spec.name}-${place.name}.png`, caret: 'initial' });
     report.results.push(result);
     await context.close();
   }

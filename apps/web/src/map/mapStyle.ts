@@ -1117,7 +1117,7 @@ function labelLayers(p: Palette, theme: MapTheme, options: MapStyleOptions): Lay
         'all',
         POINT,
         ['has', 'name'],
-        ['any', station, rankUpTo(['step', ['zoom'], 1, 15, 3, 16, 8, 17, 99])],
+        ['any', station, rankUpTo(['step', ['zoom'], 1, 15, 4, 16, 15, 17, 99])],
       ],
       layout: {
         'icon-image': poiIconImage(theme),

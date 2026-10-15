@@ -1253,6 +1253,14 @@ button.report-marker {
   }
 }
 
+/* No telemóvel, o MapLibre mostra as atribuições abertas até o mapa se mexer (depois ficam no
+   botão "i"): enquanto estão abertas, o botão "Que sítio é este?" sobe para não as tapar. */
+@media (max-width: 639px) {
+  .app:has(.maplibregl-ctrl-attrib.maplibregl-compact-show) .whats-here {
+    bottom: calc(96px + env(safe-area-inset-bottom));
+  }
+}
+
 /* Controlos do MapLibre no tema escuro */
 :root[data-theme='dark'] .app .maplibregl-ctrl-group,
 :root[data-theme='dark'] .app .maplibregl-ctrl-attrib,
