@@ -113,7 +113,8 @@ describe('Transportes públicos', () => {
     expect(steps).toHaveTextContent('A pé até Sé de Lisboa');
     expect(steps).not.toHaveTextContent('END');
 
-    expect(mapProps.current?.transit).toBe(a);
+    // O mapa recebe o itinerário depois do painel (efeito → estado da App → nova renderização).
+    await waitFor(() => expect(mapProps.current?.transit).toBe(a));
     expect(mapProps.current?.routes).toEqual([]);
     // Sem navegação passo a passo nos transportes públicos.
     expect(within(panel).queryByRole('button', { name: 'Iniciar' })).toBeNull();
@@ -124,7 +125,7 @@ describe('Transportes públicos', () => {
 
     // Autocarro só com horário e cores sem contraste: o texto passa a preto.
     await user.click(within(second as HTMLElement).getByRole('button'));
-    expect(mapProps.current?.transit).toBe(b);
+    await waitFor(() => expect(mapProps.current?.transit).toBe(b));
     expect(within(panel).getByRole('list', { name: 'Passos da ligação' })).toHaveTextContent(
       'Hora do horário (sem tempo real)',
     );
@@ -138,7 +139,7 @@ describe('Transportes públicos', () => {
     expect(thirdSteps).toHaveTextContent('A horas (tempo real)');
 
     await user.click(within(panel).getByRole('button', { name: 'Fechar direções' }));
-    expect(mapProps.current?.transit).toBeNull();
+    await waitFor(() => expect(mapProps.current?.transit).toBeNull());
   });
 
   it('só a hora entra nas opções; "Chegar às" pede a hora de chegada', async () => {
