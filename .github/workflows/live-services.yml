@@ -1,0 +1,56 @@
+name: Serviços reais
+
+# Confirma que os serviços externos (Valhalla da FOSSGIS e Open-Meteo) continuam a responder no
+# formato que a app espera, pelo mesmo código das funções do Vercel. Poucos pedidos por execução.
+on:
+  workflow_dispatch:
+  push:
+    branches: ['claude/**']
+    paths:
+      - '.github/workflows/live-services.yml'
+      - 'apps/web/api/**'
+      - 'apps/web/src/server/live-services.test.ts'
+      - 'packages/core/src/valhalla.ts'
+      - 'packages/core/src/weather.ts'
+  schedule:
+    # Uma vez por semana (segunda-feira, 05:23 UTC).
+    - cron: '23 5 * * 1'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: live-services
+  cancel-in-progress: false
+
+jobs:
+  live:
+    name: Rotas e meteorologia reais
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Testes contra os serviços reais
+        run: pnpm --filter @trajecto/web exec vitest run src/server/live-services.test.ts
+        env:
+          TRAJECTO_LIVE: '1'
+
+      - name: Respostas recebidas
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: live-output
+          path: apps/web/live-output/
+          retention-days: 7
