@@ -1,6 +1,7 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import type { Plugin } from 'vite';
 import { handleRouteRequest } from './api/route';
+import { handleWeatherRequest } from './api/weather';
 
 /** Limite de leitura do corpo antes de entregar à função (a função aplica o seu próprio limite). */
 const MAX_BODY_BYTES = 64_000;
@@ -19,7 +20,7 @@ async function readBody(req: IncomingMessage): Promise<Buffer | null> {
   return Buffer.concat(chunks);
 }
 
-async function toWebRequest(req: IncomingMessage): Promise<Request | null> {
+async function toWebRequest(req: IncomingMessage, path: string): Promise<Request | null> {
   const headers = new Headers();
   for (const name of FORWARDED_HEADERS) {
     const value = req.headers[name];
@@ -29,7 +30,9 @@ async function toWebRequest(req: IncomingMessage): Promise<Request | null> {
   const hasBody = method !== 'GET' && method !== 'HEAD';
   const body = hasBody ? await readBody(req) : undefined;
   if (body === null) return null;
-  return new Request('http://localhost/api/route', {
+  // Depois de montado num caminho, `req.url` só tem o resto (por exemplo "/?lat=…").
+  const query = (req.url ?? '').replace(/^[^?]*/u, '');
+  return new Request(`http://localhost${path}${query}`, {
     method,
     headers,
     ...(body ? { body: new Uint8Array(body) } : {}),
@@ -42,39 +45,51 @@ async function sendWebResponse(res: ServerResponse, response: Response): Promise
   res.end(Buffer.from(await response.arrayBuffer()));
 }
 
-/**
- * Serve /api/route no `vite` e no `vite preview` com a mesma função usada no Vercel,
- * para o comportamento ser igual em desenvolvimento e em produção.
- */
-export function apiPlugin(options: { routeUpstream?: string } = {}): Plugin {
-  const handle = (req: IncomingMessage, res: ServerResponse) => {
+type Handler = (request: Request) => Promise<Response>;
+
+function middleware(path: string, handler: Handler) {
+  return (req: IncomingMessage, res: ServerResponse) => {
     void (async () => {
       try {
-        const request = await toWebRequest(req);
+        const request = await toWebRequest(req, path);
         if (!request) {
           res.statusCode = 413;
           res.end();
           return;
         }
-        const response = await handleRouteRequest(
-          request,
-          options.routeUpstream ? { upstream: options.routeUpstream } : {},
-        );
-        await sendWebResponse(res, response);
+        await sendWebResponse(res, await handler(request));
       } catch (error) {
-        console.error('[api/route]', error);
+        console.error(`[${path}]`, error);
         res.statusCode = 500;
         res.end();
       }
     })();
   };
+}
+
+/**
+ * Serve /api/route e /api/weather no `vite` e no `vite preview` com as mesmas funções usadas
+ * no Vercel, para o comportamento ser igual em desenvolvimento e em produção.
+ */
+export function apiPlugin(options: { routeUpstream?: string } = {}): Plugin {
+  const routes: [string, Handler][] = [
+    [
+      '/api/route',
+      (request) =>
+        handleRouteRequest(
+          request,
+          options.routeUpstream ? { upstream: options.routeUpstream } : {},
+        ),
+    ],
+    ['/api/weather', (request) => handleWeatherRequest(request)],
+  ];
   return {
     name: 'trajecto-api',
     configureServer(server) {
-      server.middlewares.use('/api/route', handle);
+      for (const [path, handler] of routes) server.middlewares.use(path, middleware(path, handler));
     },
     configurePreviewServer(server) {
-      server.middlewares.use('/api/route', handle);
+      for (const [path, handler] of routes) server.middlewares.use(path, middleware(path, handler));
     },
   };
 }

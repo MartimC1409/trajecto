@@ -47,6 +47,13 @@ test.describe('Trajecto (Fases 2 e 3: rotas e navegação)', () => {
       locations: [{ lat: START.latitude, lon: START.longitude, type: 'break' }, { type: 'break' }],
     });
 
+    // Meteorologia na rota (Fase 4): pedido com os pontos da rota e resumo visível.
+    const weather = panel.getByRole('region', { name: 'Meteorologia na rota' });
+    await expect(weather).toBeVisible();
+    await expect(weather).toContainText('Open-Meteo.com');
+    expect(mocks.weatherRequests.length).toBeGreaterThan(0);
+    expect(mocks.weatherRequests[0]?.searchParams.get('lat')?.split(',').length).toBe(2);
+
     await routes.nth(1).click();
     await expect(routes.nth(1)).toHaveAttribute('aria-pressed', 'true');
 

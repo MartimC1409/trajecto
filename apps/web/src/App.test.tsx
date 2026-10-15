@@ -19,7 +19,13 @@ vi.mock('./map/MapView', () => ({
   },
 }));
 
-const config: AppConfig = { geocoderUrl: '/g', routerUrl: '/r', tileJsonUrl: 'x', glyphsUrl: 'y' };
+const config: AppConfig = {
+  geocoderUrl: '/g',
+  routerUrl: '/r',
+  weatherUrl: '/w',
+  tileJsonUrl: 'x',
+  glyphsUrl: 'y',
+};
 
 function setup() {
   const storage = createMemoryStorage();

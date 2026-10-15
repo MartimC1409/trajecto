@@ -21,5 +21,6 @@ Estados possíveis:
 | [0009](0009-backend-dados-tempo-real.md) | Backend, dados e tempo real | Aceite | 2026-10-14 |
 | [0010](0010-qualidade-e-armazenamento-fase-1.md) | Qualidade, acessibilidade e armazenamento local (Fase 1) | Aceite | 2026-10-14 |
 | [0011](0011-rotas-e-navegacao.md) | Rotas e navegação (Fases 2 e 3) | Aceite | 2026-10-14 |
+| [0012](0012-meteorologia-na-rota.md) | Fase 4: meteorologia na rota, sem trânsito próprio | Aceite | 2026-10-15 |
 
 O contexto completo está em [`../fase-0-planeamento.md`](../fase-0-planeamento.md).

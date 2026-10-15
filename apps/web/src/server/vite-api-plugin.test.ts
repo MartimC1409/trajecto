@@ -7,10 +7,15 @@ import { apiPlugin } from '../../vite-api-plugin';
 
 type Handler = (req: IncomingMessage, res: ServerResponse) => void;
 
-function mount(plugin: Plugin, hook: 'configureServer' | 'configurePreviewServer'): Handler {
-  let handler: Handler | undefined;
-  const server = { middlewares: { use: (_path: string, fn: Handler) => (handler = fn) } };
+function mount(
+  plugin: Plugin,
+  hook: 'configureServer' | 'configurePreviewServer',
+  path = '/api/route',
+): Handler {
+  const handlers = new Map<string, Handler>();
+  const server = { middlewares: { use: (p: string, fn: Handler) => handlers.set(p, fn) } };
   (plugin[hook] as (s: unknown) => void)(server);
+  const handler = handlers.get(path);
   if (!handler) throw new Error('sem middleware');
   return handler;
 }
@@ -59,6 +64,20 @@ describe('apiPlugin', () => {
       expect(headers.get('cache-control')).toBe('no-store');
     }
     expect(fetchMock.mock.calls[0]?.[0]).toBe('http://localhost:8002/route');
+  });
+
+  it('serve /api/weather com a query string original', async () => {
+    const fetchMock = vi.fn<typeof fetch>(
+      async () => new Response('[]', { headers: { 'Content-Type': 'application/json' } }),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+    const { res, done } = response();
+    const req = request('GET', '');
+    Object.assign(req, { url: '/?lat=38.7,38.8&lon=-9.1,-9.2' });
+    mount(apiPlugin(), 'configureServer', '/api/weather')(req, res);
+    expect(await done).toBe('[]');
+    const upstream = new URL(String(fetchMock.mock.calls[0]?.[0]));
+    expect(upstream.searchParams.get('latitude')).toBe('38.7,38.8');
   });
 
   it('recusa corpos grandes e outros métodos, e trata erros internos', async () => {

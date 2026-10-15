@@ -20,6 +20,7 @@ import { useTranslation } from 'react-i18next';
 import { formatClock, formatDistance, formatDuration, formatEuros } from '../format';
 import type { Endpoint, PlannerInput, PlannerState } from '../hooks/useRoutePlanner';
 import { useRoutePlanner } from '../hooks/useRoutePlanner';
+import { useRouteWeather } from '../hooks/useRouteWeather';
 import { useStore } from '../hooks/useStore';
 import type { RouteMarker } from '../map/MapView';
 import type { NavigationTarget } from '../navigation/session';
@@ -28,6 +29,7 @@ import type { IconName } from './Icon';
 import { Icon } from './Icon';
 import { ManeuverIcon } from './Maneuver';
 import { placeText } from './placeText';
+import { RouteWeather } from './RouteWeather';
 import { SearchBox } from './SearchBox';
 
 const MODE_ICONS: Record<TravelMode, IconName> = {
@@ -77,7 +79,7 @@ export function routeLanguage(appLanguage: string): RouteLanguage {
 export function DirectionsPanel(props: DirectionsPanelProps) {
   const { t, i18n } = useTranslation();
   const id = useId();
-  const { router, geocoder, preferences, locate } = useServices();
+  const { router, geocoder, preferences, locate, weather } = useServices();
   const prefs = useStore(preferences);
   const locale = i18n.language;
 
@@ -230,6 +232,19 @@ export function DirectionsPanel(props: DirectionsPanelProps) {
   const roadMode = mode === 'car' || mode === 'motorcycle';
   // Só se pode iniciar com o resultado do pedido atual (não com a rota anterior ainda visível).
   const fresh = state.status === 'success' && state.input === input;
+
+  // Meteorologia na rota escolhida, à hora de partida do pedido (agora, partir às, chegar às).
+  const weatherRoute = fresh ? (selected ?? null) : null;
+  let departure: number | null = null;
+  if (shown && weatherRoute) {
+    const requested = shown.input.time;
+    if (requested.kind === 'now') departure = shown.computedAt;
+    else {
+      const at = parseLocal(requested.value).getTime();
+      departure = requested.kind === 'depart' ? at : at - weatherRoute.duration * 1000;
+    }
+  }
+  const weatherState = useRouteWeather(weather, weatherRoute, departure, shown?.computedAt ?? 0);
   const canNavigate = fresh && origin.kind === 'current' && Boolean(selected);
 
   return (
@@ -424,6 +439,7 @@ export function DirectionsPanel(props: DirectionsPanelProps) {
           {origin.kind !== 'current' && (
             <p className="muted">{t('directions.startNeedsLocation')}</p>
           )}
+          <RouteWeather state={weatherState} />
         </>
       )}
 

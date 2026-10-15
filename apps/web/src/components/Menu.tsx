@@ -344,6 +344,11 @@ export function Menu(props: MenuProps) {
             </a>
           </li>
           <li>
+            <a href="https://open-meteo.com/" target="_blank" rel="noopener noreferrer">
+              {t('about.openMeteo')}
+            </a>
+          </li>
+          <li>
             <a
               href="https://valhalla.github.io/valhalla/"
               target="_blank"
