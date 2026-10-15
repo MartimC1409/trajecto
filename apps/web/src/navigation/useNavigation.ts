@@ -55,6 +55,15 @@ export function useNavigation(
           instruction,
         }),
       reroutingMessage: () => live.current.t('nav.rerouting'),
+      alertMessage: (kind, meters, detail) =>
+        live.current.t(
+          detail === undefined ? `alerts.spoken.${kind}` : `alerts.spokenWithLimit.${kind}`,
+          {
+            distance: formatDistance(meters, live.current.language, true),
+            limit: detail,
+            defaultValue: '',
+          },
+        ),
       onChange: setState,
     });
     return sessionRef.current;

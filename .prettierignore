@@ -6,3 +6,6 @@ test-results
 pnpm-lock.yaml
 *.png
 *.md
+
+# Dados gerados por scripts (por exemplo, os radares do OpenStreetMap)
+apps/web/public/data/

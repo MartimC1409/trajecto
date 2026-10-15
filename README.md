@@ -3,10 +3,18 @@
 Aplicação pessoal de mapas e navegação para Portugal, em português europeu.
 É uma aplicação web instalável no telemóvel (PWA).
 
-> **Estado: Fase 4 concluída, a aguardar validação no telemóvel.** Já há mapa, pesquisa,
-> favoritos, rotas, navegação com voz e meteorologia na rota. Alertas chegam nas fases seguintes
+> **Estado: Fase 5 concluída, a aguardar validação no telemóvel.** Já há mapa, pesquisa,
+> favoritos, rotas, navegação com voz, meteorologia na rota, reportes e radares fixos
 > ([plano](docs/fase-0-planeamento.md), [Fases 2 e 3](docs/fase-2-3/verificacao.md),
-> [Fase 4](docs/fase-4/verificacao.md)).
+> [Fase 4](docs/fase-4/verificacao.md), [Fase 5](docs/fase-5/verificacao.md)).
+
+## Reportes e radares (Fase 5)
+
+- **Reportar:** polícia, acidente, perigo, trânsito parado, obras e estrada cortada, durante a
+  navegação ou num ponto do mapa. Ficam só neste dispositivo e desaparecem sozinhos.
+- **Avisos na navegação:** reportes e radares fixos em cima da rota, no ecrã e por voz.
+- **Radares fixos:** do OpenStreetMap (ODbL), atualizados uma vez por mês
+  ([ADR 0013](docs/adr/0013-reportes-locais-e-radares.md)).
 
 ## Meteorologia na rota (Fase 4)
 
@@ -82,6 +90,9 @@ ficheiro: as variáveis `VITE_*` ficam visíveis no browser.
 |---|---|---|
 | [OpenFreeMap](https://openfreemap.org) | Tiles do mapa | Gratuito e sem chave; atribuição obrigatória; **sem garantia de disponibilidade (SLA)** |
 | [Photon (komoot)](https://photon.komoot.io) | Pesquisa e moradas | Servidor público para uso "num limite razoável". Uso intensivo é limitado ou bloqueado e não há garantias. Por isso a app espera 300 ms depois de escreveres (*debounce*), exige 3 letras, guarda resultados em cache e cancela pedidos antigos |
+| [Valhalla (FOSSGIS)](https://valhalla1.openstreetmap.de) | Rotas | Servidor público, uso justo (1 pedido por segundo), sem garantias; passa pela função `/api/route` |
+| [Open-Meteo](https://open-meteo.com) | Meteorologia na rota | Gratuito só para uso não comercial, < 10 000 pedidos/dia; CC BY 4.0; passa pela função `/api/weather` |
+| [Overpass API](https://overpass-api.de) | Radares fixos (OSM) | Só uma consulta por mês, no GitHub Actions; a app nunca o consulta |
 
 Estes serviços recebem o teu endereço IP, o que pesquisas e as zonas do mapa que vês.
 Os teus favoritos, histórico e definições **nunca saem do dispositivo**.
@@ -90,6 +101,9 @@ Os teus favoritos, histórico e definições **nunca saem do dispositivo**.
 
 - Dados do mapa © [contribuidores do OpenStreetMap](https://www.openstreetmap.org/copyright), licença ODbL.
 - Esquema de tiles © [OpenMapTiles](https://www.openmaptiles.org/), CC-BY 4.0.
+- Radares fixos (`apps/web/public/data/speed-cameras.json`): © contribuidores do OpenStreetMap,
+  [ODbL 1.0](https://opendatacommons.org/licenses/odbl/1-0/).
+- Meteorologia: [Open-Meteo.com](https://open-meteo.com), CC BY 4.0.
 - Fontes Noto Sans: SIL Open Font License 1.1.
 
 ## Documentação
@@ -98,3 +112,5 @@ Os teus favoritos, histórico e definições **nunca saem do dispositivo**.
 - [Decisões de arquitetura (ADR)](docs/adr/README.md)
 - [Guia de instalação no Windows](docs/fase-1/guia-instalacao-windows.md)
 - [Publicar no Vercel para testar no iPhone](docs/fase-1/deploy-vercel.md)
+- Verificações: [Fases 2 e 3](docs/fase-2-3/verificacao.md), [Fase 4](docs/fase-4/verificacao.md),
+  [Fase 5](docs/fase-5/verificacao.md)

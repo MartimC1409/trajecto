@@ -3,8 +3,24 @@ import { useEffect, useId, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { formatClock, formatDistance, formatDuration } from '../format';
 import type { NavigationState } from '../navigation/session';
+import type { IconName } from './Icon';
 import { Icon } from './Icon';
 import { Lanes, ManeuverIcon } from './Maneuver';
+
+const ALERT_ICONS: Record<string, IconName> = {
+  police: 'police',
+  accident: 'accident',
+  hazard: 'hazard',
+  jam: 'jam',
+  roadworks: 'roadworks',
+  closure: 'closure',
+  speed_camera: 'camera',
+  average_speed_camera: 'camera',
+};
+
+function alertIcon(kind: string): IconName {
+  return ALERT_ICONS[kind] ?? 'hazard';
+}
 
 /** Mostra "Depois…" quando a manobra seguinte vem logo a seguir (menos do que isto, em metros). */
 const THEN_DISTANCE = 150;
@@ -20,6 +36,8 @@ interface NavigationViewProps {
   readonly onRecenter: () => void;
   readonly onSetSpeed: (factor: number) => void;
   readonly onEnd: () => void;
+  /** Abre a escolha do tipo de reporte. */
+  readonly onReport?: () => void;
 }
 
 export function NavigationView(props: NavigationViewProps) {
@@ -59,7 +77,12 @@ export function NavigationView(props: NavigationViewProps) {
   else if (state.notice === 'reroute_failed') status = t('nav.rerouteFailed');
   else if (state.notice === 'gps_denied') status = t('nav.gpsDenied');
   else if (state.notice === 'gps_error') status = t('nav.gpsError');
-  else if (snapshot?.status === 'off_route') status = t('nav.offRoute');
+  else if (state.notice === 'gps_weak') {
+    status =
+      state.gpsAccuracy === null
+        ? t('nav.gpsWeakUnknown')
+        : t('nav.gpsWeak', { accuracy: `±${formatDistance(state.gpsAccuracy, locale)}` });
+  } else if (snapshot?.status === 'off_route') status = t('nav.offRoute');
   else if (!snapshot && !state.simulate) status = t('nav.waitingGps');
 
   const exit = next?.sign;
@@ -108,6 +131,22 @@ export function NavigationView(props: NavigationViewProps) {
           </p>
         )}
       </div>
+
+      {state.nextAlert && !arrived && (
+        <p className="nav-alert">
+          <Icon name={alertIcon(state.nextAlert.kind)} />
+          <span>
+            {t('alerts.ahead', {
+              type: t(`reports.types.${state.nextAlert.kind}`, {
+                defaultValue: state.nextAlert.kind,
+              }),
+              distance: formatDistance(state.nextAlert.distance, locale),
+            })}
+            {state.nextAlert.detail !== undefined &&
+              ` · ${t('alerts.limit', { limit: state.nextAlert.detail })}`}
+          </span>
+        </p>
+      )}
 
       {/* A região de estado existe sempre (para os leitores de ecrã anunciarem as mudanças);
           só a mensagem aparece e desaparece. */}
@@ -158,6 +197,12 @@ export function NavigationView(props: NavigationViewProps) {
                 {factor}×
               </button>
             ))}
+          {props.onReport && !arrived && (
+            <button type="button" className="button" onClick={props.onReport}>
+              <Icon name="report" />
+              {t('reports.report')}
+            </button>
+          )}
           {!props.follow && (
             <button type="button" className="button" onClick={props.onRecenter}>
               <Icon name="navigation" />

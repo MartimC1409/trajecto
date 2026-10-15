@@ -32,6 +32,9 @@ interface MenuProps {
   readonly onSetHistoryEnabled: (enabled: boolean) => void;
   readonly onSetVoiceGuidance: (enabled: boolean) => void;
   readonly onSetFuel: (fuel: FuelPreferences) => void;
+  readonly onSetPoliceReports: (enabled: boolean) => void;
+  readonly onSetSpeedCameras: (enabled: boolean) => void;
+  readonly onClearReports: () => void;
 }
 
 /** Campo numérico que aceita vírgula decimal e só grava valores dentro dos limites. */
@@ -307,6 +310,39 @@ export function Menu(props: MenuProps) {
             {t('settings.fuelHint')}
           </p>
         </fieldset>
+        <h4>{t('settings.reports')}</h4>
+        <div className="field">
+          <label className="checkbox">
+            <input
+              type="checkbox"
+              checked={props.preferences.policeReports}
+              aria-describedby={`${titleId}-police-hint`}
+              onChange={(event) => props.onSetPoliceReports(event.target.checked)}
+            />
+            {t('settings.police')}
+          </label>
+          <p id={`${titleId}-police-hint`} className="muted">
+            {t('settings.policeHint')}
+          </p>
+          <label className="checkbox">
+            <input
+              type="checkbox"
+              checked={props.preferences.speedCameras}
+              aria-describedby={`${titleId}-cameras-hint`}
+              onChange={(event) => props.onSetSpeedCameras(event.target.checked)}
+            />
+            {t('settings.speedCameras')}
+          </label>
+          <p id={`${titleId}-cameras-hint`} className="muted">
+            {t('settings.speedCamerasHint')}
+          </p>
+          <p className="muted">{t('reports.localOnly')}</p>
+          <ConfirmButton
+            label={t('settings.clearReports')}
+            confirmLabel={t('settings.confirmClearReports')}
+            onConfirm={props.onClearReports}
+          />
+        </div>
         <div className="field">
           <ConfirmButton
             label={t('settings.clearAll')}
@@ -341,6 +377,15 @@ export function Menu(props: MenuProps) {
           <li>
             <a href="https://photon.komoot.io/" target="_blank" rel="noopener noreferrer">
               {t('about.photon')}
+            </a>
+          </li>
+          <li>
+            <a
+              href="https://www.openstreetmap.org/copyright"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {t('about.speedCameras')}
             </a>
           </li>
           <li>

@@ -22,5 +22,6 @@ Estados possíveis:
 | [0010](0010-qualidade-e-armazenamento-fase-1.md) | Qualidade, acessibilidade e armazenamento local (Fase 1) | Aceite | 2026-10-14 |
 | [0011](0011-rotas-e-navegacao.md) | Rotas e navegação (Fases 2 e 3) | Aceite | 2026-10-14 |
 | [0012](0012-meteorologia-na-rota.md) | Fase 4: meteorologia na rota, sem trânsito próprio | Aceite | 2026-10-15 |
+| [0013](0013-reportes-locais-e-radares.md) | Fase 5: reportes no dispositivo e radares fixos do OpenStreetMap | Aceite | 2026-10-15 |
 
 O contexto completo está em [`../fase-0-planeamento.md`](../fase-0-planeamento.md).

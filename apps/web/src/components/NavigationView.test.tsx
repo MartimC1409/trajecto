@@ -33,8 +33,10 @@ function state(overrides: Partial<NavigationState> = {}): NavigationState {
     position: null,
     rerouting: false,
     notice: null,
+    gpsAccuracy: 8,
     simulate: false,
     simulationSpeed: 1,
+    nextAlert: null,
     updatedAt: new Date(2026, 9, 14, 9, 0).getTime(),
     ...overrides,
   };
@@ -106,6 +108,8 @@ describe('NavigationView', () => {
     [{ notice: 'reroute_failed' as const }, 'Não foi possível recalcular a rota'],
     [{ notice: 'gps_denied' as const }, 'Sem acesso à localização'],
     [{ notice: 'gps_error' as const }, 'Sem sinal de GPS.'],
+    [{ notice: 'gps_weak' as const, gpsAccuracy: 150 }, 'Sinal de GPS fraco (precisão de ±150 m)'],
+    [{ notice: 'gps_weak' as const, gpsAccuracy: null }, 'Sinal de GPS fraco. A navegação'],
     [{ snapshot: snapshot({ status: 'off_route' }) }, 'Fora da rota'],
     [{ snapshot: null }, 'À espera do sinal de GPS…'],
   ])('mostra o estado %o', (overrides, text) => {
@@ -141,5 +145,23 @@ describe('NavigationView', () => {
       'aria-pressed',
       'false',
     );
+  });
+
+  it('mostra o próximo aviso e o botão Reportar', async () => {
+    const onReport = vi.fn();
+    const { nav, user } = setup({ nextAlert: { kind: 'police', distance: 420 } }, { onReport });
+    expect(nav).toHaveTextContent('Polícia a 400 m');
+    await user.click(within(nav).getByRole('button', { name: 'Reportar' }));
+    expect(onReport).toHaveBeenCalled();
+  });
+
+  it('mostra radares com o limite e tipos desconhecidos pelo nome', () => {
+    const { nav } = setup({ nextAlert: { kind: 'speed_camera', distance: 1200, detail: 50 } });
+    expect(nav).toHaveTextContent('Radar fixo a 1,2 km · 50 km/h');
+  });
+
+  it('mostra tipos de aviso desconhecidos pelo nome', () => {
+    const { nav } = setup({ nextAlert: { kind: 'xyz', distance: 300 } });
+    expect(nav).toHaveTextContent('xyz a 300 m');
   });
 });

@@ -1,5 +1,13 @@
 import './worker';
-import type { BBox, Favorite, LngLat, MapViewState, Route, TravelMode } from '@trajecto/core';
+import type {
+  BBox,
+  Favorite,
+  LngLat,
+  MapViewState,
+  Report,
+  Route,
+  TravelMode,
+} from '@trajecto/core';
 import type { GeoJSONSource } from 'maplibre-gl';
 import {
   AttributionControl,
@@ -66,6 +74,10 @@ export interface MapViewProps {
   readonly onRouteClick?: (index: number) => void;
   /** O utilizador moveu o mapa à mão durante a navegação (deixa de o seguir). */
   readonly onUserMove?: () => void;
+  /** Reportes ativos a mostrar no mapa. */
+  readonly reports?: readonly Report[];
+  /** Tocar num reporte (sem esta função, os marcadores não são interativos). */
+  readonly onReportClick?: (report: Report) => void;
 }
 
 const FOLLOW_ZOOM: Record<TravelMode, number> = {
@@ -111,13 +123,14 @@ function readView(map: MapLibreMap): MapViewState {
 }
 
 export function MapView(props: MapViewProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
   const appliedThemeRef = useRef<MapTheme>(props.theme);
   const selectedMarkerRef = useRef<Marker | null>(null);
   const favoriteMarkersRef = useRef<Marker[]>([]);
   const routeMarkersRef = useRef<Marker[]>([]);
+  const reportMarkersRef = useRef<Marker[]>([]);
   const puckRef = useRef<Marker | null>(null);
   const geolocateRef = useRef<GeolocateControl | null>(null);
   const wasNavigatingRef = useRef(false);
@@ -127,6 +140,7 @@ export function MapView(props: MapViewProps) {
   const onMapClick = useEffectEvent(props.onMapClick);
   const onRouteClick = useEffectEvent((index: number) => props.onRouteClick?.(index));
   const onUserMove = useEffectEvent(() => props.onUserMove?.());
+  const onReportClick = useEffectEvent((report: Report) => props.onReportClick?.(report));
   const onFavoriteClick = useEffectEvent(props.onFavoriteClick);
   const onViewChange = useEffectEvent(props.onViewChange);
   const onReady = useEffectEvent(props.onReady);
@@ -202,6 +216,7 @@ export function MapView(props: MapViewProps) {
       selectedMarkerRef.current = null;
       favoriteMarkersRef.current = [];
       routeMarkersRef.current = [];
+      reportMarkersRef.current = [];
       puckRef.current = null;
       geolocateRef.current = null;
       mapRef.current = null;
@@ -372,6 +387,37 @@ export function MapView(props: MapViewProps) {
       return new Marker({ element }).setLngLat(lngLat).addTo(map);
     });
   }, [props.routeMarkers]);
+
+  // Reportes (polícia, acidentes, obras…).
+  const interactiveReports = Boolean(props.onReportClick);
+  const language = i18n.language;
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    for (const marker of reportMarkersRef.current) marker.remove();
+    reportMarkersRef.current = (props.reports ?? []).map((report) => {
+      const element = document.createElement(interactiveReports ? 'button' : 'div');
+      if (element instanceof HTMLButtonElement) element.type = 'button';
+      element.className = `${MARKER_CLASS} report-marker report-${report.type}`;
+      const time = new Intl.DateTimeFormat(language, {
+        hour: '2-digit',
+        minute: '2-digit',
+      }).format(new Date(report.createdAt));
+      element.setAttribute(
+        'aria-label',
+        t('reports.marker', { type: t(`reports.types.${report.type}`), time }),
+      );
+      if (!interactiveReports) element.setAttribute('role', 'img');
+      element.innerHTML = iconSvg(report.type);
+      if (interactiveReports) {
+        element.addEventListener('click', (event) => {
+          event.stopPropagation();
+          onReportClick(report);
+        });
+      }
+      return new Marker({ element }).setLngLat([report.lngLat.lng, report.lngLat.lat]).addTo(map);
+    });
+  }, [props.reports, interactiveReports, t, language]);
 
   // Seta da posição atual durante a navegação.
   const position = props.navigation?.position ?? null;

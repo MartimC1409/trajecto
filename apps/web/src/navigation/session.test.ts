@@ -73,6 +73,7 @@ function setup(routerImpl?: Router['route']) {
     speak,
     formatAlert: (m, text) => `Daqui a ${m} metros, ${text}`,
     reroutingMessage: () => 'A recalcular a rota.',
+    alertMessage: (kind, meters) => `${kind} daqui a ${meters} metros.`,
     onChange: (state) => states.push(state),
   });
   const target: NavigationTarget = {
@@ -186,6 +187,41 @@ describe('createNavigationSession', () => {
     expect(session.getState()?.notice).toBe('gps_error');
   });
 
+  it('com GPS impreciso diz porquê, mostra a posição e começa quando o sinal melhora', () => {
+    const { session, gps, target } = setup();
+    session.start(target);
+    const indoors = along(50, 20);
+    gps.emit(indoors, 0, { accuracy: 150.4 });
+    let state = session.getState();
+    expect(state?.notice).toBe('gps_weak');
+    expect(state?.gpsAccuracy).toBe(150);
+    expect(state?.snapshot).toBeNull();
+    expect(state?.position?.lngLat).toEqual(indoors);
+
+    gps.emit(along(60), 1000, { accuracy: 6 });
+    state = session.getState();
+    expect(state?.notice).toBeNull();
+    expect(state?.gpsAccuracy).toBe(6);
+    expect(state?.snapshot?.status).toBe('navigating');
+
+    // Já na rota, uma posição imprecisa não tira a seta da estrada.
+    const onRoad = state?.position;
+    gps.emit(along(200, 300), 2000, { accuracy: 500 });
+    expect(session.getState()?.notice).toBe('gps_weak');
+    expect(session.getState()?.position).toEqual(onRoad);
+  });
+
+  it('parado, um "tempo esgotado" logo depois de uma posição não é falta de sinal', () => {
+    const { session, gps, target } = setup();
+    session.start(target);
+    gps.emit(along(100), 0);
+    gps.fail(3);
+    expect(session.getState()?.notice).toBeNull();
+    vi.advanceTimersByTime(31_000);
+    gps.fail(3);
+    expect(session.getState()?.notice).toBe('gps_error');
+  });
+
   it('funciona sem geolocalização disponível', () => {
     const states: (NavigationState | null)[] = [];
     const session = createNavigationSession({
@@ -223,5 +259,27 @@ describe('createNavigationSession', () => {
     session.start(target);
     session.setSimulationSpeed(4);
     expect(session.getState()?.simulationSpeed).toBe(1);
+  });
+
+  it('avisa os reportes que ficam à frente na rota, uma vez cada', () => {
+    const { session, speak, gps, target } = setup();
+    session.start({
+      ...target,
+      alerts: [
+        { id: 'p1', kind: 'police', lngLat: along(600) },
+        { id: 'away', kind: 'hazard', lngLat: { lng: -9.13, lat: 38.7 } },
+      ],
+    });
+    gps.emit(along(0), 0, { speed: 13.9 });
+    expect(session.getState()?.nextAlert).toMatchObject({ kind: 'police' });
+    expect(session.getState()?.nextAlert?.distance).toBeCloseTo(600, -1);
+    // A ~14 m/s o aviso é dito ~25 s antes (≈ 350 m): a 300 m já é dito, uma só vez.
+    gps.emit(along(300), 22_000, { speed: 13.9 });
+    expect(speak.mock.calls.at(-1)?.[0]).toContain('police daqui a 300 metros.');
+    speak.mockClear();
+    gps.emit(along(350), 26_000, { speed: 13.9 });
+    expect(speak.mock.calls.flat(2).some((text) => String(text).startsWith('police'))).toBe(false);
+    gps.emit(along(700), 50_000, { speed: 13.9 });
+    expect(session.getState()?.nextAlert).toBeNull();
   });
 });

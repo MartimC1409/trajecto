@@ -126,6 +126,53 @@ export const ptPT = {
       location_unavailable: 'Não foi possível obter a tua localização. Tenta de novo.',
     },
   },
+  reports: {
+    report: 'Reportar',
+    reportHere: 'Reportar aqui',
+    title: 'O que está na estrada?',
+    close: 'Fechar reportes',
+    saved: '{{type}}: reporte guardado neste dispositivo.',
+    types: {
+      police: 'Polícia',
+      accident: 'Acidente',
+      hazard: 'Perigo na via',
+      jam: 'Trânsito parado',
+      roadworks: 'Obras',
+      closure: 'Estrada cortada',
+      speed_camera: 'Radar fixo',
+      average_speed_camera: 'Radar de velocidade média',
+    },
+    reportedAt: 'Reportado às {{time}}',
+    expiresAt: 'Desaparece às {{time}}',
+    confirmations_one: 'Confirmado {{count}} vez',
+    confirmations_other: 'Confirmado {{count}} vezes',
+    stillThere: 'Ainda lá está',
+    gone: 'Já não está',
+    confirmed: 'Obrigado: o reporte fica mais tempo.',
+    removed: 'Reporte apagado.',
+    localOnly: 'Os reportes ficam só neste dispositivo e desaparecem sozinhos.',
+    marker: '{{type}}, reportado às {{time}}',
+  },
+  alerts: {
+    spoken: {
+      police: 'Polícia reportada daqui a {{distance}}.',
+      accident: 'Acidente reportado daqui a {{distance}}.',
+      hazard: 'Perigo na via daqui a {{distance}}.',
+      jam: 'Trânsito parado daqui a {{distance}}.',
+      roadworks: 'Obras daqui a {{distance}}.',
+      closure: 'Estrada cortada daqui a {{distance}}.',
+      speed_camera: 'Radar de velocidade daqui a {{distance}}.',
+      average_speed_camera: 'Controlo de velocidade média daqui a {{distance}}.',
+    },
+    spokenWithLimit: {
+      speed_camera:
+        'Radar de velocidade daqui a {{distance}}, limite de {{limit}} quilómetros por hora.',
+      average_speed_camera:
+        'Controlo de velocidade média daqui a {{distance}}, limite de {{limit}} quilómetros por hora.',
+    },
+    ahead: '{{type}} a {{distance}}',
+    limit: '{{limit}} km/h',
+  },
   weather: {
     title: 'Meteorologia na rota',
     loading: 'A obter a previsão…',
@@ -188,6 +235,10 @@ export const ptPT = {
     waitingGps: 'À espera do sinal de GPS…',
     gpsDenied: 'Sem acesso à localização: autoriza-a nas definições do browser.',
     gpsError: 'Sem sinal de GPS.',
+    gpsWeak:
+      'Sinal de GPS fraco (precisão de {{accuracy}}). A navegação começa quando o sinal melhorar: vai para um sítio aberto, longe de edifícios.',
+    gpsWeakUnknown:
+      'Sinal de GPS fraco. A navegação começa quando o sinal melhorar: vai para um sítio aberto, longe de edifícios.',
     lanes: 'Faixas a usar',
     lane: 'Faixa {{n}}',
     laneRecommended: 'Faixa {{n}} (recomendada)',
@@ -244,6 +295,15 @@ export const ptPT = {
     fuelPrice: 'Preço do combustível (€/L)',
     fuelHint:
       'Valores indicativos: ajusta-os ao teu veículo e ao preço atual. A estimativa não inclui portagens.',
+    reports: 'Reportes',
+    police: 'Mostrar e avisar reportes de polícia',
+    policeHint:
+      'Para uso pessoal. Antes de partilhar a app com outras pessoas é preciso confirmar a legalidade.',
+    clearReports: 'Apagar todos os reportes',
+    speedCameras: 'Avisar radares fixos',
+    speedCamerasHint:
+      'Localizações do OpenStreetMap, atualizadas uma vez por mês: podem faltar radares ou haver radares desativados. Os detetores de radar são proibidos (art. 84.º do Código da Estrada); confirma a lei antes de partilhar a app.',
+    confirmClearReports: 'Confirmar: apagar reportes',
   },
   about: {
     text: 'Trajecto é um projeto pessoal de mapas e navegação para Portugal.',
@@ -255,6 +315,8 @@ export const ptPT = {
     osm: 'Dados do mapa © contribuidores do OpenStreetMap, disponíveis sob a licença ODbL.',
     omt: 'Tiles vetoriais no esquema © OpenMapTiles (CC-BY 4.0), servidos pelo OpenFreeMap.',
     photon: 'Pesquisa por Photon (komoot), com dados do OpenStreetMap.',
+    speedCameras:
+      'Radares fixos: dados © contribuidores do OpenStreetMap, disponíveis sob a licença ODbL, extraídos uma vez por mês.',
     openMeteo:
       'Previsão do tempo por Open-Meteo.com (CC BY 4.0), pedida através do servidor do Trajecto com pontos da rota arredondados a ~100 m.',
     valhalla:

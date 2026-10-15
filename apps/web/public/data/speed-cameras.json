@@ -1,0 +1,9 @@
+{
+ "source": "OpenStreetMap (highway=speed_camera e relações type=enforcement)",
+ "attribution": "© OpenStreetMap contributors",
+ "license": "ODbL-1.0",
+ "licenseUrl": "https://opendatacommons.org/licenses/odbl/1-0/",
+ "copyrightUrl": "https://www.openstreetmap.org/copyright",
+ "generatedAt": "2026-10-15T00:00:00.000Z",
+ "cameras": []
+}
