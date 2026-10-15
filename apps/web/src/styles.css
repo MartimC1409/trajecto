@@ -525,22 +525,26 @@ a {
 /* Direções */
 .sheet.directions {
   max-height: 62vh;
-  /* O espaço do fundo passa para o fim do conteúdo: assim a barra "Iniciar" encosta mesmo ao
-     fundo do painel (os browsers contam o padding do painel na posição "sticky"). */
-  padding-bottom: 0;
+  /* Corpo que desliza + rodapé fixo com "Iniciar": a barra nunca tapa outros botões. */
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 0;
 }
 
-.sheet.directions::after {
-  content: '';
-  display: block;
-  height: calc(16px + env(safe-area-inset-bottom));
+.directions-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 16px 16px calc(16px + env(safe-area-inset-bottom));
+}
+
+.directions-body:not(:last-child) {
+  padding-bottom: 16px;
 }
 
 .start-bar {
-  position: sticky;
-  bottom: 0;
-  z-index: 1;
-  margin: 14px -16px 0;
+  flex: none;
   padding: 0 16px calc(10px + env(safe-area-inset-bottom));
   background: var(--surface);
   box-shadow: 0 -1px 0 var(--border);

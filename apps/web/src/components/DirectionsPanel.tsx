@@ -254,275 +254,278 @@ export function DirectionsPanel(props: DirectionsPanelProps) {
       hidden={props.hidden}
       aria-busy={state.status === 'loading' || state.status === 'locating'}
     >
-      <div className="sheet-header">
-        <h2 id={`${id}-title`} ref={headingRef} tabIndex={-1} className="sheet-title">
-          {t('directions.title')}
-        </h2>
-        <button
-          type="button"
-          className="icon-button"
-          aria-label={t('directions.close')}
-          onClick={props.onClose}
-        >
-          <Icon name="close" />
-        </button>
-      </div>
-
-      <fieldset className="mode-tabs">
-        <legend className="visually-hidden">{t('directions.mode')}</legend>
-        {TRAVEL_MODES.map((m) => (
-          <label key={m} className="mode-tab">
-            <input
-              type="radio"
-              name={`${id}-mode`}
-              value={m}
-              checked={mode === m}
-              onChange={() => preferences.set('travelMode', m)}
-            />
-            <Icon name={MODE_ICONS[m]} />
-            <span>{t(`directions.modes.${m}`)}</span>
-          </label>
-        ))}
-      </fieldset>
-
-      {editing ? (
-        <div className="waypoint-search">
-          <SearchField
-            label={t('directions.search', { what: editingLabel.toLocaleLowerCase(locale) })}
-            favorites={props.favorites}
-            recent={props.recent}
-            getBias={props.getBias}
-            geocoder={geocoder}
-            onSelect={choose}
-          />
-          <div className="waypoint-search-actions">
-            {editing !== 'stop' && (
-              <button type="button" className="button" onClick={chooseMyLocation}>
-                <Icon name="navigation" />
-                {t('directions.useMyLocation')}
-              </button>
-            )}
-            <button type="button" className="button" onClick={() => setEditing(null)}>
-              {t('directions.cancelSearch')}
-            </button>
-          </div>
+      {/* Só esta parte desliza; a barra "Iniciar" fica por baixo, sem tapar nada. */}
+      <div className="directions-body">
+        <div className="sheet-header">
+          <h2 id={`${id}-title`} ref={headingRef} tabIndex={-1} className="sheet-title">
+            {t('directions.title')}
+          </h2>
+          <button
+            type="button"
+            className="icon-button"
+            aria-label={t('directions.close')}
+            onClick={props.onClose}
+          >
+            <Icon name="close" />
+          </button>
         </div>
-      ) : (
-        <div className="waypoints">
-          <ol className="waypoint-list">
-            <WaypointRow
-              icon="navigation"
-              label={t('directions.origin')}
-              name={endpointName(origin)}
-              actionLabel={t('directions.change', {
-                what: t('directions.origin').toLocaleLowerCase(locale),
-              })}
-              onAction={() => setEditing('origin')}
-            />
-            {stops.map((stop, index) => (
-              <WaypointRow
-                key={`${stop.id}-${index}`}
-                icon="pin"
-                label={t('directions.stop', { n: index + 1 })}
-                name={placeText(stop, t).title}
-                actionLabel={t('directions.removeStop', {
-                  what: t('directions.stop', { n: index + 1 }).toLocaleLowerCase(locale),
-                })}
-                actionIcon="close"
-                onAction={() => setStops((list) => list.filter((_, i) => i !== index))}
-              />
-            ))}
-            <WaypointRow
-              icon="flag"
-              label={t('directions.destination')}
-              name={endpointName(destination)}
-              actionLabel={t('directions.change', {
-                what: t('directions.destination').toLocaleLowerCase(locale),
-              })}
-              onAction={() => setEditing('destination')}
-            />
-          </ol>
-          <div className="waypoint-tools">
-            <button
-              type="button"
-              className="button"
-              disabled={stops.length >= MAX_STOPS}
-              onClick={() => setEditing('stop')}
-            >
-              <Icon name="plus" />
-              {t('directions.addStop')}
-            </button>
-            <button
-              type="button"
-              className="icon-button bordered"
-              aria-label={t('directions.swap')}
-              title={t('directions.swap')}
-              onClick={() => {
-                setOrigin(destination);
-                setDestination(origin);
-                setStops((list) => [...list].reverse());
-              }}
-            >
-              <Icon name="swap" />
-            </button>
-          </div>
-        </div>
-      )}
 
-      <p className="directions-status" role="status" aria-live="polite">
-        {statusText}
-      </p>
-
-      {routes.length > 0 && (
-        <>
-          <h3 className="visually-hidden">{t('directions.routes')}</h3>
-          <ul className="route-list">
-            {routes.map((route, index) => {
-              const fuel = fuelText(route);
-              return (
-                // As rotas de um resultado não mudam de ordem: o índice serve de chave.
-                <li key={index}>
-                  <button
-                    type="button"
-                    className="route-option"
-                    aria-pressed={index === selectedIndex}
-                    onClick={() => props.onSelectRoute(index)}
-                  >
-                    <span className="route-duration">{formatDuration(route.duration, t)}</span>
-                    <span className="route-meta">
-                      {formatDistance(route.distance, locale)} · {arrivalText(route)}
-                    </span>
-                    <span className="route-tags">
-                      {index === 0 && routes.length > 1 && (
-                        <span className="tag">{t('directions.recommended')}</span>
-                      )}
-                      {route.hasToll && <span className="tag">{t('directions.toll')}</span>}
-                      {route.hasFerry && <span className="tag">{t('directions.ferry')}</span>}
-                      {fuel && <span className="tag">{fuel}</span>}
-                    </span>
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
-
-          <div className="sheet-actions">
-            <button
-              type="button"
-              className="button"
-              aria-expanded={stepsOpen}
-              aria-controls={`${id}-steps`}
-              onClick={() => setStepsOpen((open) => !open)}
-            >
-              <Icon name="list" />
-              {stepsOpen ? t('directions.hideSteps') : t('directions.showSteps')}
-            </button>
-          </div>
-          <RouteWeather state={weatherState} />
-        </>
-      )}
-
-      <button
-        type="button"
-        className="button disclosure"
-        aria-expanded={optionsOpen}
-        aria-controls={`${id}-options`}
-        onClick={() => setOptionsOpen((open) => !open)}
-      >
-        {t('directions.options')}
-      </button>
-      <div id={`${id}-options`} className="route-options" hidden={!optionsOpen}>
-        <fieldset className="field">
-          <legend className="visually-hidden">{t('directions.options')}</legend>
-          {roadMode && (
-            <>
-              <Checkbox
-                label={t('directions.avoidTolls')}
-                checked={routePreferences.avoidTolls}
-                onChange={(v) => setPreference('avoidTolls', v)}
-              />
-              <Checkbox
-                label={t('directions.avoidHighways')}
-                checked={routePreferences.avoidHighways}
-                onChange={(v) => setPreference('avoidHighways', v)}
-              />
-            </>
-          )}
-          <Checkbox
-            label={t('directions.avoidFerries')}
-            checked={routePreferences.avoidFerries}
-            onChange={(v) => setPreference('avoidFerries', v)}
-          />
-          <Checkbox
-            label={t('directions.shortest')}
-            checked={routePreferences.shortest}
-            onChange={(v) => setPreference('shortest', v)}
-          />
-          <p className="muted">{t('directions.avoidHint')}</p>
-        </fieldset>
-        <fieldset className="field">
-          <legend>{t('directions.when')}</legend>
-          {(
-            [
-              ['now', 'directions.leaveNow'],
-              ['depart', 'directions.departAt'],
-              ['arrive', 'directions.arriveBy'],
-            ] as const
-          ).map(([kind, key]) => (
-            <label key={kind} className="radio">
+        <fieldset className="mode-tabs">
+          <legend className="visually-hidden">{t('directions.mode')}</legend>
+          {TRAVEL_MODES.map((m) => (
+            <label key={m} className="mode-tab">
               <input
                 type="radio"
-                name={`${id}-when`}
-                checked={time.kind === kind}
-                onChange={() => setTimeKind(kind)}
+                name={`${id}-mode`}
+                value={m}
+                checked={mode === m}
+                onChange={() => preferences.set('travelMode', m)}
               />
-              {t(key)}
+              <Icon name={MODE_ICONS[m]} />
+              <span>{t(`directions.modes.${m}`)}</span>
             </label>
           ))}
-          {time.kind !== 'now' && (
-            <label className="number-field">
-              <span>{t('directions.dateTime')}</span>
-              <input
-                type="datetime-local"
-                value={time.value}
-                onChange={(event) => {
-                  const value = event.target.value;
-                  if (isValidLocalDateTime(value)) setTime({ kind: time.kind, value });
-                }}
-              />
-            </label>
-          )}
-          {(time.kind !== 'now' || stops.length > 0) && (
-            <p className="muted">{t('directions.noAlternatives')}</p>
-          )}
         </fieldset>
-      </div>
 
-      {selected && (
-        <ol
-          id={`${id}-steps`}
-          className="steps"
-          aria-label={t('directions.steps')}
-          hidden={!stepsOpen}
-        >
-          {selected?.maneuvers.map((maneuver, index) => (
-            // Os passos de uma rota não mudam de ordem: o índice serve de chave.
-            <li key={index} className="step">
-              <ManeuverIcon
-                type={maneuver.type}
-                roundaboutExit={maneuver.roundaboutExit}
-                size={24}
+        {editing ? (
+          <div className="waypoint-search">
+            <SearchField
+              label={t('directions.search', { what: editingLabel.toLocaleLowerCase(locale) })}
+              favorites={props.favorites}
+              recent={props.recent}
+              getBias={props.getBias}
+              geocoder={geocoder}
+              onSelect={choose}
+            />
+            <div className="waypoint-search-actions">
+              {editing !== 'stop' && (
+                <button type="button" className="button" onClick={chooseMyLocation}>
+                  <Icon name="navigation" />
+                  {t('directions.useMyLocation')}
+                </button>
+              )}
+              <button type="button" className="button" onClick={() => setEditing(null)}>
+                {t('directions.cancelSearch')}
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="waypoints">
+            <ol className="waypoint-list">
+              <WaypointRow
+                icon="navigation"
+                label={t('directions.origin')}
+                name={endpointName(origin)}
+                actionLabel={t('directions.change', {
+                  what: t('directions.origin').toLocaleLowerCase(locale),
+                })}
+                onAction={() => setEditing('origin')}
               />
-              <span className="step-text">
-                <span>{maneuver.instruction}</span>
-                {maneuver.distance > 0 && (
-                  <span className="muted">{formatDistance(maneuver.distance, locale)}</span>
-                )}
-              </span>
-            </li>
-          ))}
-        </ol>
-      )}
+              {stops.map((stop, index) => (
+                <WaypointRow
+                  key={`${stop.id}-${index}`}
+                  icon="pin"
+                  label={t('directions.stop', { n: index + 1 })}
+                  name={placeText(stop, t).title}
+                  actionLabel={t('directions.removeStop', {
+                    what: t('directions.stop', { n: index + 1 }).toLocaleLowerCase(locale),
+                  })}
+                  actionIcon="close"
+                  onAction={() => setStops((list) => list.filter((_, i) => i !== index))}
+                />
+              ))}
+              <WaypointRow
+                icon="flag"
+                label={t('directions.destination')}
+                name={endpointName(destination)}
+                actionLabel={t('directions.change', {
+                  what: t('directions.destination').toLocaleLowerCase(locale),
+                })}
+                onAction={() => setEditing('destination')}
+              />
+            </ol>
+            <div className="waypoint-tools">
+              <button
+                type="button"
+                className="button"
+                disabled={stops.length >= MAX_STOPS}
+                onClick={() => setEditing('stop')}
+              >
+                <Icon name="plus" />
+                {t('directions.addStop')}
+              </button>
+              <button
+                type="button"
+                className="icon-button bordered"
+                aria-label={t('directions.swap')}
+                title={t('directions.swap')}
+                onClick={() => {
+                  setOrigin(destination);
+                  setDestination(origin);
+                  setStops((list) => [...list].reverse());
+                }}
+              >
+                <Icon name="swap" />
+              </button>
+            </div>
+          </div>
+        )}
+
+        <p className="directions-status" role="status" aria-live="polite">
+          {statusText}
+        </p>
+
+        {routes.length > 0 && (
+          <>
+            <h3 className="visually-hidden">{t('directions.routes')}</h3>
+            <ul className="route-list">
+              {routes.map((route, index) => {
+                const fuel = fuelText(route);
+                return (
+                  // As rotas de um resultado não mudam de ordem: o índice serve de chave.
+                  <li key={index}>
+                    <button
+                      type="button"
+                      className="route-option"
+                      aria-pressed={index === selectedIndex}
+                      onClick={() => props.onSelectRoute(index)}
+                    >
+                      <span className="route-duration">{formatDuration(route.duration, t)}</span>
+                      <span className="route-meta">
+                        {formatDistance(route.distance, locale)} · {arrivalText(route)}
+                      </span>
+                      <span className="route-tags">
+                        {index === 0 && routes.length > 1 && (
+                          <span className="tag">{t('directions.recommended')}</span>
+                        )}
+                        {route.hasToll && <span className="tag">{t('directions.toll')}</span>}
+                        {route.hasFerry && <span className="tag">{t('directions.ferry')}</span>}
+                        {fuel && <span className="tag">{fuel}</span>}
+                      </span>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+
+            <div className="sheet-actions">
+              <button
+                type="button"
+                className="button"
+                aria-expanded={stepsOpen}
+                aria-controls={`${id}-steps`}
+                onClick={() => setStepsOpen((open) => !open)}
+              >
+                <Icon name="list" />
+                {stepsOpen ? t('directions.hideSteps') : t('directions.showSteps')}
+              </button>
+            </div>
+            <RouteWeather state={weatherState} />
+          </>
+        )}
+
+        <button
+          type="button"
+          className="button disclosure"
+          aria-expanded={optionsOpen}
+          aria-controls={`${id}-options`}
+          onClick={() => setOptionsOpen((open) => !open)}
+        >
+          {t('directions.options')}
+        </button>
+        <div id={`${id}-options`} className="route-options" hidden={!optionsOpen}>
+          <fieldset className="field">
+            <legend className="visually-hidden">{t('directions.options')}</legend>
+            {roadMode && (
+              <>
+                <Checkbox
+                  label={t('directions.avoidTolls')}
+                  checked={routePreferences.avoidTolls}
+                  onChange={(v) => setPreference('avoidTolls', v)}
+                />
+                <Checkbox
+                  label={t('directions.avoidHighways')}
+                  checked={routePreferences.avoidHighways}
+                  onChange={(v) => setPreference('avoidHighways', v)}
+                />
+              </>
+            )}
+            <Checkbox
+              label={t('directions.avoidFerries')}
+              checked={routePreferences.avoidFerries}
+              onChange={(v) => setPreference('avoidFerries', v)}
+            />
+            <Checkbox
+              label={t('directions.shortest')}
+              checked={routePreferences.shortest}
+              onChange={(v) => setPreference('shortest', v)}
+            />
+            <p className="muted">{t('directions.avoidHint')}</p>
+          </fieldset>
+          <fieldset className="field">
+            <legend>{t('directions.when')}</legend>
+            {(
+              [
+                ['now', 'directions.leaveNow'],
+                ['depart', 'directions.departAt'],
+                ['arrive', 'directions.arriveBy'],
+              ] as const
+            ).map(([kind, key]) => (
+              <label key={kind} className="radio">
+                <input
+                  type="radio"
+                  name={`${id}-when`}
+                  checked={time.kind === kind}
+                  onChange={() => setTimeKind(kind)}
+                />
+                {t(key)}
+              </label>
+            ))}
+            {time.kind !== 'now' && (
+              <label className="number-field">
+                <span>{t('directions.dateTime')}</span>
+                <input
+                  type="datetime-local"
+                  value={time.value}
+                  onChange={(event) => {
+                    const value = event.target.value;
+                    if (isValidLocalDateTime(value)) setTime({ kind: time.kind, value });
+                  }}
+                />
+              </label>
+            )}
+            {(time.kind !== 'now' || stops.length > 0) && (
+              <p className="muted">{t('directions.noAlternatives')}</p>
+            )}
+          </fieldset>
+        </div>
+
+        {selected && (
+          <ol
+            id={`${id}-steps`}
+            className="steps"
+            aria-label={t('directions.steps')}
+            hidden={!stepsOpen}
+          >
+            {selected?.maneuvers.map((maneuver, index) => (
+              // Os passos de uma rota não mudam de ordem: o índice serve de chave.
+              <li key={index} className="step">
+                <ManeuverIcon
+                  type={maneuver.type}
+                  roundaboutExit={maneuver.roundaboutExit}
+                  size={24}
+                />
+                <span className="step-text">
+                  <span>{maneuver.instruction}</span>
+                  {maneuver.distance > 0 && (
+                    <span className="muted">{formatDistance(maneuver.distance, locale)}</span>
+                  )}
+                </span>
+              </li>
+            ))}
+          </ol>
+        )}
+      </div>
 
       {/* "Iniciar" e "Simular" ficam sempre visíveis no fundo do painel: no telemóvel o painel é
           baixo e, no meio do conteúdo, o botão ficava escondido abaixo do ecrã. */}
