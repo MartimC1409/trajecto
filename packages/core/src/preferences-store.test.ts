@@ -44,6 +44,7 @@ describe('createPreferencesStore', () => {
       theme: 'dark',
       historyEnabled: false,
       travelMode: 'car',
+      publicTransport: false,
       voiceGuidance: true,
       routePreferences: DEFAULT_PREFERENCES.routePreferences,
       fuel: DEFAULT_PREFERENCES.fuel,

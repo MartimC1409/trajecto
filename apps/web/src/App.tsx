@@ -6,6 +6,7 @@ import type {
   ReportType,
   Route,
   SearchBias,
+  TransitItinerary,
 } from '@trajecto/core';
 import {
   GeocoderError,
@@ -75,6 +76,8 @@ export function App({ config }: { config: AppConfig }) {
   } | null>(null);
   const selectedRoute =
     routeChoice && routeChoice.routes === routeView.routes ? routeChoice.index : 0;
+  // Itinerário de transportes públicos escolhido no painel de direções.
+  const [transitView, setTransitView] = useState<TransitItinerary | null>(null);
 
   const navigation = useNavigation(services, prefs.voiceGuidance, (enabled) =>
     preferences.set('voiceGuidance', enabled),
@@ -254,6 +257,7 @@ export function App({ config }: { config: AppConfig }) {
   function closeDirections() {
     setDirections(null);
     setRouteView({ routes: [], markers: [] });
+    setTransitView(null);
   }
 
   function startNavigation(target: NavigationTarget) {
@@ -361,6 +365,7 @@ export function App({ config }: { config: AppConfig }) {
           navigation={
             navState ? { position: navState.position, follow, mode: navState.route.mode } : null
           }
+          transit={navigating ? null : transitView}
           onRouteClick={(index) => {
             // Durante a navegação, tocar na rota não muda a rota escolhida no painel escondido.
             if (!navigating) setRouteChoice({ routes: routeView.routes, index });
@@ -419,6 +424,7 @@ export function App({ config }: { config: AppConfig }) {
           getBias={getBias}
           onSelectRoute={(index) => setRouteChoice({ routes: routeView.routes, index })}
           onRoutesChange={onRoutesChange}
+          onTransitChange={setTransitView}
           onStart={startNavigation}
           onClose={closeDirections}
         />

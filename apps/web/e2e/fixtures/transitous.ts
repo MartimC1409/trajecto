@@ -1,0 +1,225 @@
+/**
+ * Resposta do Transitous (MOTIS v2.11.1, `/api/v6/plan`) para os testes ponta a ponta, no formato
+ * da especificação: metro com atraso em tempo real e autocarro só com horário (Lisboa, Baixa).
+ * A partida e a chegada têm nomes genéricos ("START" e "END"): a app tem de mostrar os nomes
+ * escolhidos pelo utilizador e não estes.
+ */
+export const TRANSIT_RESPONSE = {
+  requestParameters: {},
+  debugOutput: {},
+  from: {
+    name: 'START',
+    lat: 38.715,
+    lon: -9.145,
+  },
+  to: {
+    name: 'END',
+    lat: 38.7105,
+    lon: -9.1376,
+  },
+  direct: [],
+  itineraries: [
+    {
+      duration: 720,
+      startTime: '2026-10-16T08:00:00Z',
+      endTime: '2026-10-16T08:12:00Z',
+      transfers: 0,
+      legs: [
+        {
+          mode: 'WALK',
+          from: {
+            name: 'START',
+            lat: 38.715,
+            lon: -9.145,
+          },
+          to: {
+            name: 'Restauradores',
+            lat: 38.7149,
+            lon: -9.1415,
+          },
+          duration: 240,
+          startTime: '2026-10-16T08:00:00Z',
+          endTime: '2026-10-16T08:04:00Z',
+          scheduledStartTime: '2026-10-16T08:00:00Z',
+          scheduledEndTime: '2026-10-16T08:04:00Z',
+          realTime: false,
+          scheduled: true,
+          legGeometry: {
+            points: 'of~yhAnidmPp@uu@p@uu@p@uu@p@uu@',
+            precision: 6,
+            length: 5,
+          },
+          distance: 320,
+        },
+        {
+          mode: 'SUBWAY',
+          from: {
+            name: 'Restauradores',
+            lat: 38.7149,
+            lon: -9.1415,
+          },
+          to: {
+            name: 'Baixa-Chiado',
+            lat: 38.7106,
+            lon: -9.1394,
+          },
+          duration: 180,
+          startTime: '2026-10-16T08:06:00Z',
+          endTime: '2026-10-16T08:09:00Z',
+          scheduledStartTime: '2026-10-16T08:05:00Z',
+          scheduledEndTime: '2026-10-16T08:08:00Z',
+          realTime: true,
+          scheduled: true,
+          legGeometry: {
+            points: 'g`~yhAvn}lPdbAy_@dbAy_@dbAy_@dbAy_@',
+            precision: 6,
+            length: 5,
+          },
+          routeShortName: 'Az',
+          routeLongName: 'Linha Azul',
+          headsign: 'Santa Apolónia',
+          agencyName: 'Metropolitano de Lisboa',
+          routeColor: '0072BC',
+          routeTextColor: 'FFFFFF',
+          intermediateStops: [
+            {
+              name: 'Rossio',
+              lat: 38.7139,
+              lon: -9.1404,
+            },
+          ],
+        },
+        {
+          mode: 'WALK',
+          from: {
+            name: 'Baixa-Chiado',
+            lat: 38.7106,
+            lon: -9.1394,
+          },
+          to: {
+            name: 'END',
+            lat: 38.7105,
+            lon: -9.1376,
+          },
+          duration: 180,
+          startTime: '2026-10-16T08:09:00Z',
+          endTime: '2026-10-16T08:12:00Z',
+          scheduledStartTime: '2026-10-16T08:09:00Z',
+          scheduledEndTime: '2026-10-16T08:12:00Z',
+          realTime: false,
+          scheduled: true,
+          legGeometry: {
+            points: 'osuyhAnkylPp@c[p@c[p@c[p@c[',
+            precision: 6,
+            length: 5,
+          },
+          distance: 180,
+        },
+      ],
+    },
+    {
+      duration: 840,
+      startTime: '2026-10-16T08:01:00Z',
+      endTime: '2026-10-16T08:15:00Z',
+      transfers: 0,
+      legs: [
+        {
+          mode: 'WALK',
+          from: {
+            name: 'START',
+            lat: 38.715,
+            lon: -9.145,
+          },
+          to: {
+            name: 'Avenida da Liberdade',
+            lat: 38.7146,
+            lon: -9.1433,
+          },
+          duration: 120,
+          startTime: '2026-10-16T08:01:00Z',
+          endTime: '2026-10-16T08:03:00Z',
+          scheduledStartTime: '2026-10-16T08:01:00Z',
+          scheduledEndTime: '2026-10-16T08:03:00Z',
+          realTime: false,
+          scheduled: true,
+          legGeometry: {
+            points: 'of~yhAnidmPfEqYfEqYfEqYfEqY',
+            precision: 6,
+            length: 5,
+          },
+          distance: 150,
+        },
+        {
+          mode: 'BUS',
+          from: {
+            name: 'Avenida da Liberdade',
+            lat: 38.7146,
+            lon: -9.1433,
+          },
+          to: {
+            name: 'Rua da Prata',
+            lat: 38.7112,
+            lon: -9.137,
+          },
+          duration: 480,
+          startTime: '2026-10-16T08:05:00Z',
+          endTime: '2026-10-16T08:13:00Z',
+          scheduledStartTime: '2026-10-16T08:05:00Z',
+          scheduledEndTime: '2026-10-16T08:13:00Z',
+          realTime: false,
+          scheduled: true,
+          legGeometry: {
+            points: 'om}yhAf_amPbt@maBbt@maBbt@maBbt@maB',
+            precision: 6,
+            length: 5,
+          },
+          routeShortName: '711',
+          headsign: 'Terreiro do Paço',
+          agencyName: 'Carris',
+          routeColor: 'FFC20E',
+          routeTextColor: 'FFFFFF',
+          intermediateStops: [
+            {
+              name: 'Restauradores',
+              lat: 38.7149,
+              lon: -9.1415,
+            },
+            {
+              name: 'Rossio',
+              lat: 38.7139,
+              lon: -9.1404,
+            },
+          ],
+        },
+        {
+          mode: 'WALK',
+          from: {
+            name: 'Rua da Prata',
+            lat: 38.7112,
+            lon: -9.137,
+          },
+          to: {
+            name: 'END',
+            lat: 38.7105,
+            lon: -9.1376,
+          },
+          duration: 120,
+          startTime: '2026-10-16T08:13:00Z',
+          endTime: '2026-10-16T08:15:00Z',
+          scheduledStartTime: '2026-10-16T08:13:00Z',
+          scheduledEndTime: '2026-10-16T08:15:00Z',
+          realTime: false,
+          scheduled: true,
+          legGeometry: {
+            points: '_yvyhAnutlP|IjH|IjH|IjH|IjH',
+            precision: 6,
+            length: 5,
+          },
+          distance: 110,
+        },
+      ],
+    },
+  ],
+  previousPageCursor: '',
+  nextPageCursor: '',
+};

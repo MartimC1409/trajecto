@@ -6,6 +6,7 @@ import type {
   MapViewState,
   Report,
   Route,
+  TransitItinerary,
   TravelMode,
 } from '@trajecto/core';
 import type { GeoJSONSource } from 'maplibre-gl';
@@ -31,6 +32,7 @@ import {
   routesBounds,
   routesToGeoJson,
 } from './routeLayers';
+import { TRANSIT_SOURCE, addTransitLayers, transitToGeoJson } from './transitLayers';
 
 export interface MapApi {
   getView(): MapViewState;
@@ -85,6 +87,8 @@ export interface MapViewProps {
   readonly routeMarkers?: readonly RouteMarker[];
   readonly navigation?: MapNavigation | null;
   readonly onRouteClick?: (index: number) => void;
+  /** Itinerário de transportes públicos escolhido (troços coloridos por linha). */
+  readonly transit?: TransitItinerary | null;
   /** O utilizador moveu o mapa à mão durante a navegação (deixa de o seguir). */
   readonly onUserMove?: () => void;
   /** Reportes ativos a mostrar no mapa. */
@@ -123,6 +127,30 @@ function replaceGeolocate(
 }
 
 const FLAT_CAMERA = { pitch: 0, bearing: 0, padding: { top: 0, bottom: 0, left: 0, right: 0 } };
+
+/**
+ * Mostra um retângulo com o mapa plano e virado a norte, sem ficar por baixo do painel.
+ * Um único movimento de câmara: outro movimento logo a seguir cancelaria este.
+ */
+function showBounds(map: MapLibreMap, [west, south, east, north]: BBox, duration: number): void {
+  map.jumpTo(FLAT_CAMERA);
+  const container = map.getContainer();
+  const wide = container.clientWidth >= 768;
+  map.fitBounds(
+    [
+      [west, south],
+      [east, north],
+    ],
+    {
+      padding: wide
+        ? { top: 90, bottom: 60, left: 420, right: 70 }
+        : // No telemóvel o painel ocupa até 62% da altura (styles.css, .sheet.directions).
+          { top: 90, bottom: Math.round(container.clientHeight * 0.62) + 16, left: 40, right: 40 },
+      maxZoom: 17,
+      duration,
+    },
+  );
+}
 
 function prefersReducedMotion(): boolean {
   return window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
@@ -173,6 +201,7 @@ export function MapView(props: MapViewProps) {
   const geolocateRef = useRef<GeolocateControl | null>(null);
   const wasNavigatingRef = useRef(false);
   const routeDataRef = useRef(routesToGeoJson([], 0));
+  const transitDataRef = useRef(transitToGeoJson(null));
   const [failed, setFailed] = useState(false);
 
   const onMapClick = useEffectEvent(props.onMapClick);
@@ -272,7 +301,10 @@ export function MapView(props: MapViewProps) {
       });
     }
     // As camadas da rota são parte do estilo: voltam a ser criadas quando o tema muda.
-    map.on('style.load', () => addRouteLayers(map, routeDataRef.current));
+    map.on('style.load', () => {
+      addRouteLayers(map, routeDataRef.current);
+      addTransitLayers(map, transitDataRef.current);
+    });
     for (const type of ['dragstart', 'zoomstart', 'rotatestart', 'pitchstart'] as const) {
       map.on(type, (event: { originalEvent?: Event }) => {
         if (event.originalEvent) onUserMove();
@@ -423,26 +455,23 @@ export function MapView(props: MapViewProps) {
       if (ended) map.easeTo({ ...FLAT_CAMERA, duration });
       return;
     }
-    // Um único movimento de câmara: outro movimento logo a seguir cancelaria este.
     replaceGeolocate(map, geolocateRef, true);
-    map.jumpTo(FLAT_CAMERA);
-    const [west, south, east, north] = routesBounds(routes);
-    const container = map.getContainer();
-    const wide = container.clientWidth >= 768;
-    map.fitBounds(
-      [
-        [west, south],
-        [east, north],
-      ],
-      {
-        padding: wide
-          ? { top: 90, bottom: 60, left: 420, right: 70 }
-          : { top: 90, bottom: Math.round(container.clientHeight * 0.5), left: 40, right: 40 },
-        maxZoom: 17,
-        duration,
-      },
-    );
+    showBounds(map, routesBounds(routes), duration);
   }, [routes, navigating]);
+
+  // Transportes públicos: o itinerário escolhido, com a câmara a mostrá-lo todo.
+  const transit = props.transit ?? null;
+  useEffect(() => {
+    const map = mapRef.current;
+    transitDataRef.current = transitToGeoJson(transit);
+    if (!map) return;
+    const source = map.getSource(TRANSIT_SOURCE) as GeoJSONSource | undefined;
+    if (source) source.setData(transitDataRef.current);
+    else if (map.isStyleLoaded()) addTransitLayers(map, transitDataRef.current);
+    if (!transit) return;
+    replaceGeolocate(map, geolocateRef, true);
+    showBounds(map, transit.bbox, prefersReducedMotion() ? 0 : 800);
+  }, [transit]);
 
   // Marcadores da partida, paragens e destino.
   useEffect(() => {

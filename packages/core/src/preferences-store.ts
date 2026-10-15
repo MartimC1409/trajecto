@@ -34,6 +34,8 @@ export interface Preferences {
   readonly historyEnabled: boolean;
   readonly lastView: MapViewState;
   readonly travelMode: TravelMode;
+  /** Nas direções, mostrar transportes públicos em vez do meio escolhido em `travelMode`. */
+  readonly publicTransport: boolean;
   readonly routePreferences: RoutePreferences;
   readonly voiceGuidance: boolean;
   readonly fuel: FuelPreferences;
@@ -77,6 +79,7 @@ const preferencesSchema: z.ZodType<Preferences> = z.object({
     })
     .catch({ center: DEFAULT_CENTER, zoom: DEFAULT_ZOOM }),
   travelMode: z.enum(TRAVEL_MODES).catch('car'),
+  publicTransport: z.boolean().catch(false),
   routePreferences: z
     .object({
       avoidTolls: z.boolean(),
@@ -108,6 +111,7 @@ export const DEFAULT_PREFERENCES: Preferences = {
   historyEnabled: true,
   lastView: { center: DEFAULT_CENTER, zoom: DEFAULT_ZOOM },
   travelMode: 'car',
+  publicTransport: false,
   routePreferences: DEFAULT_ROUTE_PREFERENCES,
   voiceGuidance: true,
   fuel: DEFAULT_FUEL,

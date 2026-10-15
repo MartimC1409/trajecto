@@ -76,8 +76,10 @@ export interface TransitLeg {
   readonly duration: number;
   /** Metros (só nos troços a pé). */
   readonly distance?: number;
-  /** Nome curto da linha (por exemplo "736" ou "Linha Verde"). */
+  /** Nome curto da linha (por exemplo "736" ou "Vd"). */
   readonly line?: string;
+  /** Nome longo da linha (por exemplo "Linha Verde"), quando existe. */
+  readonly lineName?: string;
   readonly headsign?: string;
   readonly agency?: string;
   /** Cores da linha em "#rrggbb", quando o operador as publica. */
@@ -186,6 +188,7 @@ const legSchema = z.object({
   distance: z.number().min(0).optional().catch(undefined),
   headsign: text,
   routeShortName: text,
+  routeLongName: text,
   displayName: text,
   agencyName: text,
   routeColor: color,
@@ -258,6 +261,9 @@ function toLeg(leg: z.infer<typeof legSchema>): TransitLeg | null {
     duration: leg.duration,
     ...(leg.distance !== undefined ? { distance: leg.distance } : {}),
     ...(kind !== 'walk' && line ? { line } : {}),
+    ...(kind !== 'walk' && leg.routeLongName && leg.routeLongName !== line
+      ? { lineName: leg.routeLongName }
+      : {}),
     ...(kind !== 'walk' && leg.headsign ? { headsign: leg.headsign } : {}),
     ...(kind !== 'walk' && leg.agencyName ? { agency: leg.agencyName } : {}),
     ...(leg.routeColor ? { color: leg.routeColor } : {}),

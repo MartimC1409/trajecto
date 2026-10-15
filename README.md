@@ -3,10 +3,19 @@
 Aplicação pessoal de mapas e navegação para Portugal, em português europeu.
 É uma aplicação web instalável no telemóvel (PWA).
 
-> **Estado: Fase 5 concluída, a aguardar validação no telemóvel.** Já há mapa, pesquisa,
-> favoritos, rotas, navegação com voz, meteorologia na rota, reportes e radares fixos
-> ([plano](docs/fase-0-planeamento.md), [Fases 2 e 3](docs/fase-2-3/verificacao.md),
-> [Fase 4](docs/fase-4/verificacao.md), [Fase 5](docs/fase-5/verificacao.md)).
+> **Estado: Fase 6 concluída, a aguardar validação no telemóvel.** Já há mapa, pesquisa,
+> favoritos, rotas, navegação com voz, meteorologia na rota, reportes, radares fixos e
+> transportes públicos ([plano](docs/fase-0-planeamento.md), [Fases 2 e 3](docs/fase-2-3/verificacao.md),
+> [Fase 4](docs/fase-4/verificacao.md), [Fase 5](docs/fase-5/verificacao.md),
+> [Fase 6](docs/fase-6/verificacao.md)).
+
+## Transportes públicos (Fase 6)
+
+- **Ligações** de metro, autocarro, comboio, elétrico e barco pelo [Transitous](https://transitous.org)
+  (horários abertos), com horas, transbordos, linhas com as cores do operador e atrasos em tempo
+  real quando o operador os publica.
+- **No mapa:** o percurso com a cor de cada linha e os troços a pé ponteados
+  ([ADR 0015](docs/adr/0015-transportes-publicos-transitous.md)).
 
 ## Mapa detalhado
 
@@ -101,6 +110,7 @@ ficheiro: as variáveis `VITE_*` ficam visíveis no browser.
 | [Open-Meteo](https://open-meteo.com) | Meteorologia na rota | Gratuito só para uso não comercial, < 10 000 pedidos/dia; CC BY 4.0; passa pela função `/api/weather` |
 | [Overpass API](https://overpass-api.de) | Radares fixos (OSM) | Só uma consulta por mês, no GitHub Actions; a app nunca o consulta |
 | [Mapterhorn](https://mapterhorn.com) | Relevo do terreno (opcional) | Gratuito; recebe o IP e as zonas vistas (guarda até 30 dias); dados DGT (CC BY 4.0) e Copernicus; desliga-se no menu |
+| [Transitous](https://transitous.org) | Transportes públicos | Comunitário, sem garantias; só para projetos de código aberto não comerciais; 20 pedidos de rotas por minuto por IP; guarda IP, URL e User-Agent 2 dias; passa pela função `/api/transit` |
 
 Estes serviços recebem o teu endereço IP, o que pesquisas e as zonas do mapa que vês.
 Os teus favoritos, histórico e definições **nunca saem do dispositivo**.
@@ -115,6 +125,8 @@ Os teus favoritos, histórico e definições **nunca saem do dispositivo**.
 - Relevo: [Mapterhorn](https://mapterhorn.com/attribution), com dados da Direção-Geral do Território
   (CC BY 4.0) e Copernicus WorldDEM-30 (© DLR e.V. 2010-2014 e © Airbus Defence and Space GmbH
   2014-2018, fornecido no âmbito do COPERNICUS pela União Europeia e pela ESA).
+- Transportes públicos: [Transitous](https://transitous.org/sources/) (cada fonte de horários com a
+  sua licença, por exemplo Carris Metropolitana CC BY 4.0) e © contribuidores do OpenStreetMap.
 - Fontes Noto Sans: SIL Open Font License 1.1.
 
 ## Licença
@@ -130,4 +142,4 @@ Os teus favoritos, histórico e definições **nunca saem do dispositivo**.
 - [Guia de instalação no Windows](docs/fase-1/guia-instalacao-windows.md)
 - [Publicar no Vercel para testar no iPhone](docs/fase-1/deploy-vercel.md)
 - Verificações: [Fases 2 e 3](docs/fase-2-3/verificacao.md), [Fase 4](docs/fase-4/verificacao.md),
-  [Fase 5](docs/fase-5/verificacao.md)
+  [Fase 5](docs/fase-5/verificacao.md), [Fase 6](docs/fase-6/verificacao.md)

@@ -58,7 +58,8 @@ function itinerary(overrides: Record<string, unknown> = {}) {
         scheduledEndTime: '2026-10-16T08:21:00Z',
         realTime: true,
         distance: undefined,
-        routeShortName: 'Verde',
+        routeShortName: 'Vd',
+        routeLongName: 'Linha Verde',
         headsign: 'Telheiras',
         agencyName: 'Metropolitano de Lisboa',
         routeColor: '00A651',
@@ -132,7 +133,8 @@ describe('parseTransitResponse', () => {
     const metro = it?.legs[1];
     expect(metro).toMatchObject({
       kind: 'subway',
-      line: 'Verde',
+      line: 'Vd',
+      lineName: 'Linha Verde',
       headsign: 'Telheiras',
       agency: 'Metropolitano de Lisboa',
       color: '#00a651',

@@ -98,10 +98,9 @@ export const POI_GLYPHS = {
   tent: '<path d="M2 20h20M12 4 3 20M12 4l9 16M12 13l-3 7M12 13l3 7"/>',
   bank: '<rect x="3" y="7" width="18" height="11" rx="2"/><circle cx="12" cy="12.5" r="2.5"/>',
   post: '<rect x="3" y="6" width="18" height="13" rx="1.5"/><path d="m3 7 9 7 9-7"/>',
-  train:
-    '<rect x="5" y="3" width="14" height="14" rx="3"/><path d="M5 10h14M8 21l2-4M16 21l-2-4"/>',
-  metro: '<path d="M5 19V5l7 9 7-9v14"/>',
-  bus: '<rect x="4" y="3" width="16" height="14" rx="2"/><path d="M4 11h16M7 17v3M17 17v3"/>',
+  train: ICON_PATHS.train,
+  metro: ICON_PATHS.metro,
+  bus: ICON_PATHS.bus,
   ferry: ICON_PATHS.ferry,
   car: ICON_PATHS.car,
   bike: ICON_PATHS.bike,

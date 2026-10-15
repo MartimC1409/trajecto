@@ -1,5 +1,6 @@
 import type { Page, Request } from '@playwright/test';
 import { REVERSE_RESPONSE, SEARCH_RESPONSE } from './fixtures/photon';
+import { TRANSIT_RESPONSE } from './fixtures/transitous';
 import { ROUTE_RESPONSE } from './fixtures/valhalla';
 
 export interface MockState {
@@ -8,6 +9,7 @@ export interface MockState {
   /** Corpos JSON dos pedidos de rota (POST /api/route). */
   readonly routeRequests: Record<string, unknown>[];
   readonly weatherRequests: URL[];
+  readonly transitRequests: URL[];
   readonly consoleErrors: string[];
 }
 
@@ -16,6 +18,7 @@ export interface MockState {
  * - pesquisa (proxy /geocoder → Photon);
  * - rotas (função /api/route → Valhalla);
  * - meteorologia (função /api/weather → Open-Meteo);
+ * - transportes públicos (função /api/transit → Transitous);
  * - tiles do OpenFreeMap (TileJSON com tiles vazios) e do relevo (Mapterhorn).
  * Assim os testes são rápidos, repetíveis e não sobrecarregam serviços públicos.
  */
@@ -69,6 +72,7 @@ export async function mockServices(
     reverseRequests: [],
     routeRequests: [],
     weatherRequests: [],
+    transitRequests: [],
     consoleErrors: [],
   };
 
@@ -118,6 +122,10 @@ export async function mockServices(
     await route.fulfill({
       json: count === 1 ? location : Array.from({ length: count }, () => location),
     });
+  });
+  await page.route('**/api/transit?**', async (route) => {
+    state.transitRequests.push(new URL(route.request().url()));
+    await route.fulfill({ json: TRANSIT_RESPONSE });
   });
   await page.route('https://tiles.openfreemap.org/planet', (route) =>
     route.fulfill({

@@ -9,6 +9,7 @@
   --accent: #0b57d0;
   --accent-contrast: #ffffff;
   --danger: #b3261e;
+  --success: #1e6b34;
   --focus: #0b57d0;
   --shadow: 0 2px 12px rgb(0 0 0 / 0.18);
   --radius: 12px;
@@ -36,6 +37,7 @@
   --accent: #8ab4f8;
   --accent-contrast: #0d1b2a;
   --danger: #ffb4ab;
+  --success: #8fd19e;
   --focus: #8ab4f8;
   --shadow: 0 2px 14px rgb(0 0 0 / 0.5);
   color-scheme: dark;
@@ -610,6 +612,13 @@ a {
   outline: 3px solid var(--focus);
 }
 
+/* Transportes públicos: linha própria, com o ícone ao lado do nome. */
+.mode-tab-wide {
+  grid-column: 1 / -1;
+  flex-direction: row;
+  gap: 8px;
+}
+
 .waypoint-list {
   margin: 12px 0 0;
   padding: 0;
@@ -774,6 +783,52 @@ a {
   display: flex;
   flex-direction: column;
   gap: 2px;
+}
+
+/* Transportes públicos */
+.transit-legs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.line-badge,
+.walk-badge {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 4px;
+  min-height: 24px;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.walk-badge {
+  padding: 2px 4px;
+  color: var(--text-muted);
+  font-weight: 400;
+}
+
+.transit-steps .line-badge {
+  margin-top: 2px;
+}
+
+.transit-time {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.transit-late {
+  color: var(--danger);
+  font-weight: 600;
+}
+
+.transit-on-time {
+  color: var(--success);
 }
 
 /* Meteorologia na rota */

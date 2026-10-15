@@ -40,7 +40,13 @@ export type IconName =
   | 'roadworks'
   | 'closure'
   | 'report'
-  | 'camera';
+  | 'camera'
+  | 'bus'
+  | 'train'
+  | 'tram'
+  | 'metro'
+  | 'cable'
+  | 'transit';
 
 // Ícones próprios, desenhados numa grelha de 24×24.
 export const ICON_PATHS: Record<IconName, string> = {
@@ -92,6 +98,15 @@ export const ICON_PATHS: Record<IconName, string> = {
   camera:
     '<rect x="3" y="7" width="13" height="10" rx="2"/><path d="m16 11 5-3v8l-5-3M7 17v4M12 17v4"/>',
   report: '<path d="M3 10v4l11 5V5z"/><path d="M7 13v5a2 2 0 0 0 4 0v-3M18 9v6M21 7v10"/>',
+  bus: '<rect x="4" y="3" width="16" height="14" rx="2"/><path d="M4 11h16M7 17v3M17 17v3"/>',
+  train:
+    '<rect x="5" y="3" width="14" height="14" rx="3"/><path d="M5 10h14M8 21l2-4M16 21l-2-4"/>',
+  tram: '<rect x="6" y="7" width="12" height="11" rx="2"/><path d="M8 3h8M12 3v4M6 13h12M9 21l1-3M15 21l-1-3"/>',
+  metro: '<path d="M5 19V5l7 9 7-9v14"/>',
+  cable:
+    '<path d="M3 5l18 4M12 7v4"/><rect x="7" y="11" width="10" height="9" rx="2"/><path d="M7 15h10"/>',
+  transit:
+    '<rect x="5" y="3" width="14" height="14" rx="3"/><path d="M5 10h14M8 21l2-4M16 21l-2-4M9 13.5h.01M15 13.5h.01"/>',
 };
 
 /** SVG completo, para usar fora do React (por exemplo, nos marcadores do mapa). */
