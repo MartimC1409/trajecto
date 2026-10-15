@@ -109,9 +109,11 @@ export function NavigationView(props: NavigationViewProps) {
         )}
       </div>
 
-      <p className="nav-status" role="status" aria-live="polite" hidden={status === ''}>
-        {status}
-      </p>
+      {/* A região de estado existe sempre (para os leitores de ecrã anunciarem as mudanças);
+          só a mensagem aparece e desaparece. */}
+      <div role="status" aria-live="polite">
+        {status && <p className="nav-status">{status}</p>}
+      </div>
 
       <div className="nav-footer">
         <div className="nav-summary" aria-label={t('nav.remaining')}>

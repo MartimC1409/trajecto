@@ -4,7 +4,7 @@ import {
   isInsideBBox,
   isValidLocalDateTime,
   RouterError,
-  ROUTING_BBOX,
+  isInsideRoutingArea,
   toLocalDateTime,
 } from './routing';
 
@@ -27,10 +27,14 @@ describe('routing', () => {
   });
 
   it('verifica a área suportada', () => {
-    expect(isInsideBBox({ lng: -9.14, lat: 38.72 }, ROUTING_BBOX)).toBe(true); // Lisboa
-    expect(isInsideBBox({ lng: -25.67, lat: 37.74 }, ROUTING_BBOX)).toBe(true); // Ponta Delgada
-    expect(isInsideBBox({ lng: -16.91, lat: 32.65 }, ROUTING_BBOX)).toBe(true); // Funchal
-    expect(isInsideBBox({ lng: 2.35, lat: 48.86 }, ROUTING_BBOX)).toBe(false); // Paris
+    expect(isInsideRoutingArea({ lng: -9.14, lat: 38.72 })).toBe(true); // Lisboa
+    expect(isInsideRoutingArea({ lng: -25.67, lat: 37.74 })).toBe(true); // Ponta Delgada
+    expect(isInsideRoutingArea({ lng: -16.91, lat: 32.65 })).toBe(true); // Funchal
+    expect(isInsideRoutingArea({ lng: 4.26, lat: 39.89 })).toBe(true); // Maó (Menorca)
+    expect(isInsideRoutingArea({ lng: -16.25, lat: 28.47 })).toBe(true); // Santa Cruz de Tenerife
+    expect(isInsideRoutingArea({ lng: 2.35, lat: 48.86 })).toBe(false); // Paris
+    expect(isInsideRoutingArea({ lng: -8.0, lat: 31.63 })).toBe(false); // Marraquexe
+    expect(isInsideBBox({ lng: 0, lat: 0 }, [-1, -1, 1, 1])).toBe(true);
   });
 
   it('identifica manobras de chegada', () => {

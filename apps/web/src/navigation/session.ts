@@ -56,6 +56,11 @@ export interface NavigationSession {
 
 /** Abaixo desta velocidade (m/s) a direção do GPS não é fiável. */
 const MIN_SPEED_FOR_HEADING = 2;
+/**
+ * Intervalo mínimo entre recálculos, contado na sessão (e não em cada rota), para respeitar
+ * o uso justo do servidor público mesmo quando a rota nova volta a ser abandonada logo.
+ */
+export const REROUTE_COOLDOWN_MS = 15_000;
 
 export function createNavigationSession(deps: NavigationSessionDeps): NavigationSession {
   const tickMs = deps.simulationTickMs ?? 1000;
@@ -67,6 +72,8 @@ export function createNavigationSession(deps: NavigationSessionDeps): Navigation
   let timer: ReturnType<typeof setInterval> | null = null;
   let rerouteController: AbortController | null = null;
   let generation = 0;
+  let lastRerouteAt = -Infinity;
+  let lastFix: NavigationFix | null = null;
 
   function emit(next: NavigationState | null) {
     state = next;
@@ -117,7 +124,9 @@ export function createNavigationSession(deps: NavigationSessionDeps): Navigation
       if (session !== generation || !route) return;
       waypoints = remaining;
       navigator = newNavigator(route);
-      patch({ route, rerouting: false, notice: null });
+      // O estado da rota anterior já não serve: recalcula-se já com a última posição conhecida.
+      patch({ route, snapshot: null, rerouting: false, notice: null });
+      if (lastFix) onFix(lastFix);
     } catch (error) {
       if (session !== generation || isAbortError(error)) return;
       patch({ rerouting: false, notice: 'reroute_failed' });
@@ -126,6 +135,7 @@ export function createNavigationSession(deps: NavigationSessionDeps): Navigation
 
   function onFix(fix: NavigationFix) {
     if (!navigator || !state) return;
+    lastFix = fix;
     const update = navigator.update(fix);
     if (update.ignored) return;
     const { snapshot } = update;
@@ -151,7 +161,10 @@ export function createNavigationSession(deps: NavigationSessionDeps): Navigation
       stopSources();
       return;
     }
-    if (update.reroute) void reroute(fix, snapshot.legIndex);
+    if (snapshot.status === 'off_route' && fix.timestamp - lastRerouteAt >= REROUTE_COOLDOWN_MS) {
+      lastRerouteAt = fix.timestamp;
+      void reroute(fix, snapshot.legIndex);
+    }
   }
 
   function startSimulation(route: Route) {
@@ -209,6 +222,8 @@ export function createNavigationSession(deps: NavigationSessionDeps): Navigation
       generation += 1;
       target = next;
       waypoints = next.waypoints;
+      lastRerouteAt = -Infinity;
+      lastFix = null;
       navigator = newNavigator(next.route);
       emit({
         route: next.route,

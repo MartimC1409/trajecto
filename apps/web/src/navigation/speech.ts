@@ -3,6 +3,11 @@ export interface Speaker {
   readonly supported: boolean;
   /** Diz as frases por ordem, interrompendo o que estiver a ser dito. */
   speak(texts: readonly string[]): void;
+  /**
+   * Ativa a voz sem dizer nada (frase vazia, volume 0). O Safari do iPhone só deixa falar
+   * depois de uma primeira frase pedida num toque do utilizador.
+   */
+  unlock(): void;
   cancel(): void;
 }
 
@@ -27,7 +32,12 @@ export function createSpeaker(
   synth: SpeechSynthesis | undefined = globalThis.speechSynthesis,
 ): Speaker {
   if (!synth || typeof SpeechSynthesisUtterance === 'undefined') {
-    return { supported: false, speak: () => undefined, cancel: () => undefined };
+    return {
+      supported: false,
+      speak: () => undefined,
+      unlock: () => undefined,
+      cancel: () => undefined,
+    };
   }
   return {
     supported: true,
@@ -43,6 +53,11 @@ export function createSpeaker(
         if (voice) utterance.voice = voice;
         synth.speak(utterance);
       }
+    },
+    unlock() {
+      const utterance = new SpeechSynthesisUtterance(' ');
+      utterance.volume = 0;
+      synth.speak(utterance);
     },
     cancel() {
       synth.cancel();

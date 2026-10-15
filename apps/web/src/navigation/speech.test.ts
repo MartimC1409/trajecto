@@ -44,6 +44,8 @@ describe('speech', () => {
     expect(synth.speak).toHaveBeenCalledTimes(2);
     speaker.cancel();
     expect(synth.cancel).toHaveBeenCalledTimes(2);
+    speaker.unlock();
+    expect(synth.speak.mock.calls.at(-1)?.[0]).toMatchObject({ text: ' ', volume: 0 });
   });
 
   it('usa outra variante da língua ou a voz por omissão', () => {
@@ -60,6 +62,7 @@ describe('speech', () => {
     const speaker = createSpeaker('pt-PT', undefined);
     expect(speaker.supported).toBe(false);
     speaker.speak(['x']);
+    speaker.unlock();
     speaker.cancel();
   });
 });

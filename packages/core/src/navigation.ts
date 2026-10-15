@@ -82,10 +82,20 @@ interface ModeProfile {
   readonly minPre: number;
   /** Velocidade típica (m/s), usada enquanto não há uma medição. */
   readonly typicalSpeed: number;
+  /** Velocidade máxima plausível (m/s), para descartar medições erradas. */
+  readonly maxSpeed: number;
 }
 
 const PROFILES: Record<TravelMode, ModeProfile> = {
-  car: { offRoute: 40, arrive: 30, minAlert: 400, maxAlert: 2000, minPre: 70, typicalSpeed: 13.9 },
+  car: {
+    offRoute: 40,
+    arrive: 30,
+    minAlert: 400,
+    maxAlert: 2000,
+    minPre: 70,
+    typicalSpeed: 13.9,
+    maxSpeed: 70,
+  },
   motorcycle: {
     offRoute: 40,
     arrive: 30,
@@ -93,9 +103,26 @@ const PROFILES: Record<TravelMode, ModeProfile> = {
     maxAlert: 2000,
     minPre: 70,
     typicalSpeed: 13.9,
+    maxSpeed: 70,
   },
-  bike: { offRoute: 30, arrive: 20, minAlert: 120, maxAlert: 500, minPre: 30, typicalSpeed: 4.5 },
-  walk: { offRoute: 25, arrive: 15, minAlert: 60, maxAlert: 200, minPre: 15, typicalSpeed: 1.4 },
+  bike: {
+    offRoute: 30,
+    arrive: 20,
+    minAlert: 120,
+    maxAlert: 500,
+    minPre: 30,
+    typicalSpeed: 4.5,
+    maxSpeed: 15,
+  },
+  walk: {
+    offRoute: 25,
+    arrive: 15,
+    minAlert: 60,
+    maxAlert: 200,
+    minPre: 15,
+    typicalSpeed: 1.4,
+    maxSpeed: 4,
+  },
 };
 
 /** Segundos de antecedência do aviso antecipado e do aviso imediato. */
@@ -112,6 +139,20 @@ const SEARCH_LOOKAHEAD_SECONDS = 15;
 const SEARCH_MIN_LOOKAHEAD = 300;
 const WRONG_WAY_ANGLE = 135;
 const WRONG_WAY_MIN_SPEED = 4;
+/** Acima desta velocidade (m/s) a direção do GPS é fiável para escolher o troço da rota. */
+const HEADING_MIN_SPEED = 4;
+/** Um troço da rota só serve se a direção dele diferir menos do que isto da direção do GPS. */
+const HEADING_TOLERANCE = 90;
+/** Recuo aceite ao escolher o troço (o GPS oscila um pouco para trás e para a frente). */
+const BACKTRACK_TOLERANCE = 20;
+/** Perto do fim, a distância em linha reta ao destino também conta como chegada. */
+const NEAR_END_ROUTE_LEFT = 200;
+
+interface Candidate {
+  readonly segment: number;
+  readonly distance: number;
+  readonly progress: number;
+}
 
 function angleDifference(a: number, b: number): number {
   const d = Math.abs(a - b) % 360;
@@ -149,6 +190,11 @@ export function createNavigator(route: Route, options: NavigatorOptions): Naviga
     durationSuffix[i] = (durationSuffix[i + 1] ?? 0) + (maneuvers[i]?.duration ?? 0);
   }
   const legEnds = route.legs.map((leg) => cumulative[leg.endIndex] ?? totalLength);
+  // Direção e comprimento de cada troço (para comparar com a direção do GPS).
+  const segmentBearing = line.slice(0, -1).map((a, i) => bearingDegrees(a, line[i + 1] ?? a));
+  const segmentLength = line
+    .slice(0, -1)
+    .map((_, i) => (cumulative[i + 1] ?? 0) - (cumulative[i] ?? 0));
 
   let segment = 0;
   let traveled = 0;
@@ -160,27 +206,61 @@ export function createNavigator(route: Route, options: NavigatorOptions): Naviga
   let arrived = false;
   let speed = profile.typicalSpeed;
   let previous: { traveled: number; timestamp: number } | undefined;
+  let lastFixAt: number | undefined;
   let lastSnapshot: NavigationSnapshot | undefined;
   const spoken = new Set<string>();
 
-  function project(p: LngLat, from: number, to: number) {
-    let best = { segment: from, distance: Infinity, progress: traveled, point: line[0] as LngLat };
+  /**
+   * Troços da rota entre `from` e `to` perto da posição (dentro de `tolerance`), por ordem da
+   * rota. Com uma direção de GPS fiável, ignora troços em sentido contrário (por exemplo, a
+   * volta de um percurso de ida e volta pela mesma estrada). Devolve também a distância à rota.
+   */
+  function candidatesIn(
+    p: LngLat,
+    from: number,
+    to: number,
+    heading: number | undefined,
+    tolerance: number,
+  ): { nearest: number; list: Candidate[] } {
+    let nearest = Infinity;
+    const list: Candidate[] = [];
     for (let i = from; i <= to; i++) {
       const a = line[i] as LngLat;
       const b = line[i + 1] ?? a;
       const proj = projectOnSegment(p, a, b);
-      if (proj.distance < best.distance) {
-        const start = cumulative[i] ?? 0;
-        const length = (cumulative[i + 1] ?? start) - start;
-        best = {
-          segment: i,
-          distance: proj.distance,
-          progress: start + length * proj.t,
-          point: proj.point,
-        };
+      nearest = Math.min(nearest, proj.distance);
+      if (proj.distance > tolerance) continue;
+      const length = segmentLength[i] ?? 0;
+      if (
+        heading !== undefined &&
+        length > 0 &&
+        angleDifference(heading, segmentBearing[i] ?? 0) > HEADING_TOLERANCE
+      ) {
+        continue;
       }
+      list.push({
+        segment: i,
+        distance: proj.distance,
+        progress: (cumulative[i] ?? 0) + length * proj.t,
+      });
     }
-    return best;
+    return { nearest, list };
+  }
+
+  /**
+   * Escolhe o troço: o primeiro (pela ordem da rota) que não fica atrás da posição anterior;
+   * só passa para um troço mais à frente se estiver claramente mais perto e o avanço for
+   * plausível. Assim, onde a rota passa duas vezes pela mesma estrada, não salta para a volta.
+   */
+  function choose(list: readonly Candidate[], margin: number, maxAdvance: number) {
+    let chosen = list.find((c) => c.progress >= traveled - BACKTRACK_TOLERANCE);
+    if (!chosen) return undefined;
+    for (const c of list) {
+      if (c.segment <= chosen.segment) continue;
+      if (c.progress - traveled > maxAdvance) break;
+      if (c.distance < chosen.distance - margin) chosen = c;
+    }
+    return chosen;
   }
 
   function windowEnd(fromSegment: number): number {
@@ -246,40 +326,71 @@ export function createNavigator(route: Route, options: NavigatorOptions): Naviga
     }
 
     // 1. Projetar a posição na rota, procurando primeiro à frente da posição anterior.
-    let best = project(fix.lngLat, Math.max(0, segment - 1), windowEnd(segment));
     const tolerance = profile.offRoute + Math.min(accuracy, 50);
-    if (best.distance > tolerance) {
+    const fixSpeed =
+      fix.speed !== undefined && fix.speed !== null && Number.isFinite(fix.speed) && fix.speed >= 0
+        ? fix.speed
+        : undefined;
+    const heading =
+      fix.heading !== undefined &&
+      fix.heading !== null &&
+      Number.isFinite(fix.heading) &&
+      (fixSpeed ?? speed) >= HEADING_MIN_SPEED
+        ? fix.heading
+        : undefined;
+    const elapsed = lastFixAt === undefined ? undefined : (fix.timestamp - lastFixAt) / 1000;
+    lastFixAt = fix.timestamp;
+    const maxAdvance =
+      elapsed === undefined || elapsed <= 0
+        ? Infinity
+        : Math.max(fixSpeed ?? 0, speed, profile.typicalSpeed) * elapsed * 2 + 50;
+    const margin = Math.max(5, accuracy / 2);
+
+    const windowed = candidatesIn(
+      fix.lngLat,
+      Math.max(0, segment - 1),
+      windowEnd(segment),
+      heading,
+      tolerance,
+    );
+    let chosen = choose(windowed.list, margin, maxAdvance);
+    let distanceFromRoute = windowed.nearest;
+    let jumped = false;
+    if (windowed.nearest > tolerance) {
       // Pode ter apanhado a rota mais à frente (por exemplo, um atalho): procurar em toda a rota.
-      const global = project(fix.lngLat, 0, lastSegment);
-      if (global.distance <= tolerance && global.progress > traveled) best = global;
+      const ahead = candidatesIn(fix.lngLat, 0, lastSegment, heading, tolerance).list.find(
+        (c) => c.progress > traveled,
+      );
+      if (ahead) {
+        chosen = ahead;
+        distanceFromRoute = ahead.distance;
+        jumped = true;
+      }
     }
-    const onRoute = best.distance <= tolerance;
+    const onRoute = distanceFromRoute <= tolerance;
     if (onRoute) {
+      if (!joined) jumped = true;
       joined = true;
-      if (best.progress > traveled) {
-        traveled = best.progress;
-        segment = best.segment;
+      if (chosen && chosen.progress > traveled) {
+        traveled = chosen.progress;
+        segment = chosen.segment;
       }
     }
 
-    // 2. Velocidade: a do GPS, ou calculada a partir do avanço na rota.
-    if (
-      fix.speed !== undefined &&
-      fix.speed !== null &&
-      Number.isFinite(fix.speed) &&
-      fix.speed >= 0
-    ) {
-      speed = fix.speed;
-    } else if (previous && fix.timestamp > previous.timestamp) {
+    // 2. Velocidade: a do GPS, ou calculada a partir do avanço na rota (só entre posições
+    // seguidas na rota, para um salto não parecer uma velocidade enorme).
+    if (fixSpeed !== undefined) {
+      speed = fixSpeed;
+    } else if (previous && onRoute && !jumped && fix.timestamp > previous.timestamp) {
       const measured =
         (traveled - previous.traveled) / ((fix.timestamp - previous.timestamp) / 1000);
-      speed = speed * 0.6 + Math.max(0, measured) * 0.4;
+      speed = speed * 0.6 + Math.min(profile.maxSpeed, Math.max(0, measured)) * 0.4;
     }
-    previous = { traveled, timestamp: fix.timestamp };
+    previous = onRoute && !jumped ? { traveled, timestamp: fix.timestamp } : undefined;
 
     // 3. Saída da rota: longe da linha, ou em sentido contrário, em várias posições seguidas.
-    initialDistance ??= best.distance;
-    const away = joined ? !onRoute : best.distance > initialDistance + JOIN_TOLERANCE;
+    initialDistance ??= distanceFromRoute;
+    const away = joined ? !onRoute : distanceFromRoute > initialDistance + JOIN_TOLERANCE;
     offCount = away ? offCount + 1 : 0;
     const routeBearing = bearingAt(segment);
     const wrongWay =
@@ -298,9 +409,12 @@ export function createNavigator(route: Route, options: NavigatorOptions): Naviga
 
     // 4. Chegada ao destino final.
     const toEnd = totalLength - traveled;
-    // Junto ao ponto final (só a partir de meio da rota, para não confundir com a partida num circuito).
+    // Junto ao ponto final em linha reta: só a partir de meio da rota (para não confundir com a
+    // partida num circuito) e só se não estiver na rota longe do fim (por exemplo, na outra faixa
+    // de uma via com separador, antes de dar a volta).
     const nearEnd =
       (traveled >= totalLength / 2 || totalLength <= profile.arrive * 4) &&
+      (!onRoute || toEnd <= Math.max(4 * profile.arrive, NEAR_END_ROUTE_LEFT)) &&
       distanceMeters(fix.lngLat, line.at(-1) as LngLat) <= profile.arrive + Math.min(accuracy, 20);
     if (!arrived && ((joined && toEnd <= profile.arrive) || nearEnd)) {
       arrived = true;
@@ -322,7 +436,11 @@ export function createNavigator(route: Route, options: NavigatorOptions): Naviga
         profile.maxAlert,
         Math.max(profile.minAlert, speed * ALERT_SECONDS),
       );
-      const preDistance = Math.max(profile.minPre, speed * PRE_SECONDS);
+      // O aviso imediato nunca pode ficar antes do aviso antecipado.
+      const preDistance = Math.max(
+        profile.minPre,
+        Math.min(speed * PRE_SECONDS, alertDistance - ALERT_PRE_GAP),
+      );
       const current = currentManeuverIndex(traveled);
       const next = nextManeuverIndex(traveled);
       const currentManeuver = maneuvers[current];
@@ -359,7 +477,7 @@ export function createNavigator(route: Route, options: NavigatorOptions): Naviga
       }
     }
 
-    const snapshot = snapshotAt(fix.lngLat, best.distance, status);
+    const snapshot = snapshotAt(fix.lngLat, distanceFromRoute, status);
     lastSnapshot = snapshot;
     return { snapshot, announcements, reroute, ignored: false };
   }

@@ -126,6 +126,26 @@ describe('createNavigationSession', () => {
     );
     await vi.runAllTimersAsync();
     expect(session.getState()).toMatchObject({ rerouting: false, notice: null });
+    // A rota nova é logo calculada com a última posição (não fica o estado da rota antiga).
+    expect(session.getState()?.snapshot).toMatchObject({ status: 'navigating' });
+  });
+
+  it('não recalcula mais de uma vez em 15 s, mesmo com uma rota nova', async () => {
+    const { session, gps, target, router } = setup();
+    session.start(target);
+    gps.emit(along(100), 0);
+    for (let t = 1; t <= 3; t++) gps.emit(along(150, 150), t * 1000);
+    await vi.runAllTimersAsync();
+    expect(router.route).toHaveBeenCalledTimes(1);
+    // Volta à rota nova e abandona-a logo: a sessão espera 15 s desde o último pedido.
+    gps.emit(along(200), 4000);
+    for (let t = 5; t <= 17; t++) gps.emit(along(250, 150), t * 1000);
+    expect(session.getState()?.snapshot?.status).toBe('off_route');
+    await vi.runAllTimersAsync();
+    expect(router.route).toHaveBeenCalledTimes(1);
+    gps.emit(along(250, 150), 18_000);
+    await vi.runAllTimersAsync();
+    expect(router.route).toHaveBeenCalledTimes(2);
   });
 
   it('avisa quando o recálculo falha e limpa o aviso ao voltar à rota', async () => {

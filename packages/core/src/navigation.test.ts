@@ -27,11 +27,61 @@ function at(route: Route, meters: number, east = 0): LngLat {
   };
 }
 
+/** Percorre a rota a 13,9 m/s (50 km/h): o tempo entre posições segue a distância percorrida. */
 function drive(route: Route, distances: readonly number[], options: NavigatorOptions = OPTIONS) {
   const navigator = createNavigator(route, options);
-  return distances.map((d, i) =>
-    navigator.update({ lngLat: at(route, d), accuracy: 5, speed: 13.9, timestamp: i * 1000 }),
-  );
+  let time = 0;
+  let last = 0;
+  return distances.map((d) => {
+    time += Math.max(1000, (Math.abs(d - last) / 13.9) * 1000);
+    last = d;
+    return navigator.update({ lngLat: at(route, d), accuracy: 5, speed: 13.9, timestamp: time });
+  });
+}
+
+const METERS_PER_DEGREE = 111_320;
+
+/** Rota sintética a partir de pontos, com uma manobra por troço indicado. */
+function syntheticRoute(
+  points: LngLat[],
+  maneuvers: { type: number; instruction: string; begin: number; end: number }[],
+): Route {
+  const cumulative = cumulativeDistances(points);
+  const total = cumulative.at(-1) ?? 0;
+  return {
+    mode: 'car',
+    geometry: points,
+    distance: total,
+    duration: total / 10,
+    bbox: [-180, -90, 180, 90],
+    hasToll: false,
+    hasHighway: false,
+    hasFerry: false,
+    legs: [{ distance: total, duration: total / 10, endIndex: points.length - 1 }],
+    maneuvers: maneuvers.map((m) => {
+      const distance = (cumulative[m.end] ?? 0) - (cumulative[m.begin] ?? 0);
+      return {
+        type: m.type,
+        instruction: m.instruction,
+        verbalPre: m.instruction,
+        streetNames: [],
+        distance,
+        duration: distance / 10,
+        beginIndex: m.begin,
+        endIndex: m.end,
+        leg: 0,
+        toll: false,
+        highway: false,
+        ferry: false,
+      };
+    }),
+  };
+}
+
+/** Ponto a `north` e `east` metros de Lisboa. */
+function offset(north: number, east: number): LngLat {
+  const lat = 38.7 + north / METERS_PER_DEGREE;
+  return { lng: -9.1 + east / (METERS_PER_DEGREE * Math.cos((38.7 * Math.PI) / 180)), lat };
 }
 
 describe('createNavigator', () => {
@@ -168,5 +218,131 @@ describe('createNavigator', () => {
     expect(
       navigator.update({ lngLat: loop.geometry[0] as LngLat, timestamp: 0 }).snapshot.status,
     ).toBe('navigating');
+  });
+
+  describe('rotas que passam duas vezes pela mesma estrada', () => {
+    // Ida 300 m para norte, inversão de marcha e volta pelo mesmo caminho até ao início.
+    const out = Array.from({ length: 13 }, (_, i) => offset(i * 25, 0));
+    const back = out.slice(0, -1).reverse();
+    const route = syntheticRoute(
+      [...out, ...back],
+      [
+        { type: 1, instruction: 'Siga para norte.', begin: 0, end: 12 },
+        { type: 13, instruction: 'Faça inversão de marcha.', begin: 12, end: 24 },
+        { type: 4, instruction: 'Chegou ao seu destino.', begin: 24, end: 24 },
+      ],
+    );
+
+    function goAndBack(withHeading: boolean) {
+      const navigator = createNavigator(route, OPTIONS);
+      const results = [];
+      let t = 0;
+      for (let north = 0; north <= 300; north += 10) {
+        t += 1000;
+        results.push(
+          navigator.update({
+            lngLat: offset(north, 2),
+            accuracy: 5,
+            speed: withHeading ? 10 : null,
+            heading: withHeading ? 0 : null,
+            timestamp: t,
+          }),
+        );
+      }
+      for (let north = 290; north >= 0; north -= 10) {
+        t += 1000;
+        results.push(
+          navigator.update({
+            lngLat: offset(north, -2),
+            accuracy: 5,
+            speed: withHeading ? 10 : null,
+            heading: withHeading ? 180 : null,
+            timestamp: t,
+          }),
+        );
+      }
+      return results;
+    }
+
+    it.each([true, false])(
+      'segue a ida e a volta sem saltar nem recalcular (direção do GPS: %s)',
+      (withHeading) => {
+        const results = goAndBack(withHeading);
+        const traveled = results.map((r) => r.snapshot.distanceTraveled);
+        // Na ida, o progresso acompanha a posição real (não salta para a volta).
+        expect(traveled[16]).toBeGreaterThan(140);
+        expect(traveled[16]).toBeLessThan(180);
+        expect(results.some((r) => r.reroute)).toBe(false);
+        expect(results.map((r) => r.snapshot.status)).not.toContain('off_route');
+        const spoken = results.flatMap((r) => r.announcements);
+        expect(spoken).toContain('Faça inversão de marcha.');
+        expect(spoken.indexOf('Faça inversão de marcha.')).toBeLessThan(
+          spoken.indexOf('Chegou ao seu destino.'),
+        );
+        expect(results.at(-1)?.snapshot.status).toBe('arrived');
+        // Só chega no fim da volta.
+        expect(results.findIndex((r) => r.snapshot.status === 'arrived')).toBeGreaterThan(50);
+      },
+    );
+  });
+
+  it('não dá a chegada por passar perto do destino na outra faixa antes de dar a volta', () => {
+    // 4 km para este, volta 35 m a norte e 500 m para oeste: o destino fica em frente ao km 3,5.
+    const out = Array.from({ length: 41 }, (_, i) => offset(0, i * 100));
+    const back = Array.from({ length: 6 }, (_, i) => offset(35, 4000 - i * 100));
+    const route = syntheticRoute(
+      [...out, ...back],
+      [
+        { type: 1, instruction: 'Siga para este.', begin: 0, end: 40 },
+        { type: 13, instruction: 'Faça inversão de marcha.', begin: 40, end: 46 },
+        { type: 4, instruction: 'Chegou ao seu destino.', begin: 46, end: 46 },
+      ],
+    );
+    const navigator = createNavigator(route, OPTIONS);
+    let t = 0;
+    const statuses = [];
+    for (let east = 0; east <= 3600; east += 100) {
+      t += 5000;
+      statuses.push(
+        navigator.update({
+          lngLat: offset(0, east),
+          accuracy: 8,
+          speed: 20,
+          heading: 90,
+          timestamp: t,
+        }).snapshot.status,
+      );
+    }
+    expect(statuses).not.toContain('arrived');
+    t += 30_000;
+    const end = navigator.update({
+      lngLat: offset(35, 3500),
+      accuracy: 8,
+      speed: 5,
+      heading: 270,
+      timestamp: t,
+    });
+    expect(end.snapshot.status).toBe('arrived');
+  });
+
+  it('não estima uma velocidade enorme ao voltar à rota depois de um desvio', () => {
+    const route = makeRoute();
+    const navigator = createNavigator(route, OPTIONS);
+    let t = 0;
+    const step = (d: number, east = 0) => {
+      t += 1000;
+      return navigator.update({
+        lngLat: at(route, d, east),
+        accuracy: 5,
+        speed: null,
+        timestamp: t,
+      });
+    };
+    for (let d = 0; d <= 100; d += 10) step(d);
+    // Desvio por uma rua paralela, longe da rota, e regresso mais à frente.
+    for (let i = 0; i < 2; i++) step(150, 150);
+    const back = step(400);
+    expect(back.snapshot.speed).toBeLessThan(20);
+    expect(back.announcements).not.toContain('Vire à direita na Rua Alexandre Herculano.');
   });
 });

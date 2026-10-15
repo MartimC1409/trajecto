@@ -18,13 +18,12 @@ import type {
 } from './routing';
 import {
   DEFAULT_ROUTE_PREFERENCES,
-  isInsideBBox,
+  isInsideRoutingArea,
   isValidLocalDateTime,
   MAX_ALTERNATIVES,
   MAX_WAYPOINTS,
   ROUTE_LANGUAGES,
   RouterError,
-  ROUTING_BBOX,
   TRAVEL_MODES,
 } from './routing';
 
@@ -87,7 +86,7 @@ export function buildValhallaRequest(request: RouteRequest): ValhallaRouteReques
   if (waypoints.length > MAX_WAYPOINTS) throw invalid('Demasiadas paragens.');
   for (const point of waypoints) {
     if (!isValidLngLat(point)) throw invalid('Coordenadas inválidas.');
-    if (!isInsideBBox(point, ROUTING_BBOX)) throw invalid('Ponto fora da área suportada.');
+    if (!isInsideRoutingArea(point)) throw invalid('Ponto fora da área suportada.');
   }
 
   const heading =

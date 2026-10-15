@@ -75,6 +75,30 @@ const FOLLOW_ZOOM: Record<TravelMode, number> = {
   walk: 17.5,
 };
 
+function createGeolocate(): GeolocateControl {
+  return new GeolocateControl({
+    positionOptions: { enableHighAccuracy: true },
+    trackUserLocation: true,
+  });
+}
+
+/**
+ * Remove o botão "A minha localização" do MapLibre e, se `keep`, volta a pô-lo (desligado).
+ * Quando está a seguir a posição, esse botão move a câmara sozinho: durante a navegação (que
+ * tem a sua própria câmara) e ao mostrar as rotas, isso estragaria o enquadramento.
+ */
+function replaceGeolocate(
+  map: MapLibreMap,
+  ref: { current: GeolocateControl | null },
+  keep: boolean,
+): void {
+  if (ref.current) map.removeControl(ref.current);
+  ref.current = keep ? createGeolocate() : null;
+  if (ref.current) map.addControl(ref.current, 'top-right');
+}
+
+const FLAT_CAMERA = { pitch: 0, bearing: 0, padding: { top: 0, bottom: 0, left: 0, right: 0 } };
+
 function prefersReducedMotion(): boolean {
   return window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
 }
@@ -95,6 +119,8 @@ export function MapView(props: MapViewProps) {
   const favoriteMarkersRef = useRef<Marker[]>([]);
   const routeMarkersRef = useRef<Marker[]>([]);
   const puckRef = useRef<Marker | null>(null);
+  const geolocateRef = useRef<GeolocateControl | null>(null);
+  const wasNavigatingRef = useRef(false);
   const routeDataRef = useRef(routesToGeoJson([], 0));
   const [failed, setFailed] = useState(false);
 
@@ -138,13 +164,8 @@ export function MapView(props: MapViewProps) {
     appliedThemeRef.current = initial.theme;
 
     map.addControl(new NavigationControl({ visualizePitch: true }), 'top-right');
-    map.addControl(
-      new GeolocateControl({
-        positionOptions: { enableHighAccuracy: true },
-        trackUserLocation: true,
-      }),
-      'top-right',
-    );
+    geolocateRef.current = createGeolocate();
+    map.addControl(geolocateRef.current, 'top-right');
     map.addControl(new ScaleControl({ unit: 'metric' }), 'bottom-left');
     map.addControl(new AttributionControl({ customAttribution: MAP_ATTRIBUTION }), 'bottom-right');
 
@@ -182,6 +203,7 @@ export function MapView(props: MapViewProps) {
       favoriteMarkersRef.current = [];
       routeMarkersRef.current = [];
       puckRef.current = null;
+      geolocateRef.current = null;
       mapRef.current = null;
       map.remove();
     };
@@ -284,11 +306,34 @@ export function MapView(props: MapViewProps) {
     else if (map.isStyleLoaded()) addRouteLayers(map, routeDataRef.current);
   }, [routes, selectedRoute]);
 
-  // Mostrar todas as rotas quando chega um resultado novo (fora da navegação).
+  // Durante a navegação, o botão de localização do MapLibre sai (a câmara é da navegação).
   const navigating = Boolean(props.navigation);
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || navigating || !routes || routes.length === 0) return;
+    if (!map) return;
+    if (navigating) {
+      wasNavigatingRef.current = true;
+      replaceGeolocate(map, geolocateRef, false);
+    } else if (!geolocateRef.current) {
+      replaceGeolocate(map, geolocateRef, true);
+    }
+  }, [navigating]);
+
+  // Fora da navegação: mostrar todas as rotas quando chega um resultado novo, com o mapa plano
+  // e virado a norte; sem rotas, só endireitar o mapa se a navegação acabou de terminar.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || navigating) return;
+    const ended = wasNavigatingRef.current;
+    wasNavigatingRef.current = false;
+    const duration = prefersReducedMotion() ? 0 : 800;
+    if (!routes || routes.length === 0) {
+      if (ended) map.easeTo({ ...FLAT_CAMERA, duration });
+      return;
+    }
+    // Um único movimento de câmara: outro movimento logo a seguir cancelaria este.
+    replaceGeolocate(map, geolocateRef, true);
+    map.jumpTo(FLAT_CAMERA);
     const [west, south, east, north] = routesBounds(routes);
     const container = map.getContainer();
     const wide = container.clientWidth >= 768;
@@ -302,7 +347,7 @@ export function MapView(props: MapViewProps) {
           ? { top: 90, bottom: 60, left: 420, right: 70 }
           : { top: 90, bottom: Math.round(container.clientHeight * 0.5), left: 40, right: 40 },
         maxZoom: 17,
-        duration: prefersReducedMotion() ? 0 : 800,
+        duration,
       },
     );
   }, [routes, navigating]);
@@ -373,20 +418,6 @@ export function MapView(props: MapViewProps) {
       essential: true,
     });
   }, [position, follow, mode]);
-
-  // Ao terminar a navegação, o mapa volta a ficar plano e virado a norte.
-  useEffect(() => {
-    const map = mapRef.current;
-    if (!map || navigating) return;
-    if (map.getPitch() !== 0 || map.getBearing() !== 0) {
-      map.easeTo({
-        pitch: 0,
-        bearing: 0,
-        padding: { top: 0, bottom: 0, left: 0, right: 0 },
-        duration: prefersReducedMotion() ? 0 : 600,
-      });
-    }
-  }, [navigating]);
 
   return (
     <div className="map-wrapper">

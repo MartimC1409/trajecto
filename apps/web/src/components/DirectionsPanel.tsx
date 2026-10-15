@@ -93,10 +93,11 @@ export function DirectionsPanel(props: DirectionsPanelProps) {
   const [stepsOpen, setStepsOpen] = useState(false);
   const headingRef = useRef<HTMLHeadingElement>(null);
 
-  // Ao abrir o painel (ou ao voltar da navegação), o foco vai para o título.
+  // Ao abrir o painel, ao voltar da navegação e ao fechar a pesquisa de um ponto, o foco vai
+  // para o título (o botão que estava focado desapareceu).
   useEffect(() => {
-    if (!props.hidden) headingRef.current?.focus();
-  }, [props.hidden]);
+    if (!props.hidden && editing === null) headingRef.current?.focus();
+  }, [props.hidden, editing]);
 
   const mode = prefs.travelMode;
   const routePreferences = prefs.routePreferences;
@@ -174,7 +175,7 @@ export function DirectionsPanel(props: DirectionsPanelProps) {
   }
 
   function start(simulate: boolean) {
-    if (!shown || !selected) return;
+    if (!fresh || !shown || !selected) return;
     props.onStart({
       route: selected,
       waypoints: shown.waypoints.slice(1),
@@ -227,7 +228,9 @@ export function DirectionsPanel(props: DirectionsPanelProps) {
         : t('directions.stop', { n: stops.length + 1 });
 
   const roadMode = mode === 'car' || mode === 'motorcycle';
-  const canNavigate = origin.kind === 'current' && Boolean(selected);
+  // Só se pode iniciar com o resultado do pedido atual (não com a rota anterior ainda visível).
+  const fresh = state.status === 'success' && state.input === input;
+  const canNavigate = fresh && origin.kind === 'current' && Boolean(selected);
 
   return (
     <section
@@ -401,7 +404,7 @@ export function DirectionsPanel(props: DirectionsPanelProps) {
             <button
               type="button"
               className="button"
-              disabled={!selected}
+              disabled={!fresh || !selected}
               onClick={() => start(true)}
             >
               <Icon name="play" />

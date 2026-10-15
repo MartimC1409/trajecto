@@ -133,6 +133,7 @@ export const en: Messages = {
     end: 'End',
     voiceOn: 'Turn voice guidance on',
     voiceOff: 'Turn voice guidance off',
+    voiceEnabled: 'Voice guidance on.',
     recenter: 'Re-centre',
     rerouting: 'Recalculating route…',
     rerouteFailed: 'Could not recalculate the route. Trying again.',

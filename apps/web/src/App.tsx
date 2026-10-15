@@ -55,7 +55,9 @@ export function App({ config }: { config: AppConfig }) {
   const selectedRoute =
     routeChoice && routeChoice.routes === routeView.routes ? routeChoice.index : 0;
 
-  const navigation = useNavigation(services, prefs.voiceGuidance);
+  const navigation = useNavigation(services, prefs.voiceGuidance, (enabled) =>
+    preferences.set('voiceGuidance', enabled),
+  );
   const navState = navigation.state;
   const [follow, setFollow] = useState(true);
   const wakeLockSupported = useWakeLock(navState !== null);
@@ -255,7 +257,10 @@ export function App({ config }: { config: AppConfig }) {
           navigation={
             navState ? { position: navState.position, follow, mode: navState.route.mode } : null
           }
-          onRouteClick={(index) => setRouteChoice({ routes: routeView.routes, index })}
+          onRouteClick={(index) => {
+            // Durante a navegação, tocar na rota não muda a rota escolhida no painel escondido.
+            if (!navigating) setRouteChoice({ routes: routeView.routes, index });
+          }}
           onUserMove={() => setFollow(false)}
         />
         {!directions && !navigating && (
@@ -311,7 +316,7 @@ export function App({ config }: { config: AppConfig }) {
           voiceSupported={navigation.voiceSupported}
           wakeLockSupported={wakeLockSupported}
           follow={follow}
-          onToggleVoice={() => preferences.set('voiceGuidance', !prefs.voiceGuidance)}
+          onToggleVoice={() => navigation.setVoiceEnabled(!prefs.voiceGuidance)}
           onRecenter={() => setFollow(true)}
           onSetSpeed={navigation.setSimulationSpeed}
           onEnd={navigation.stop}

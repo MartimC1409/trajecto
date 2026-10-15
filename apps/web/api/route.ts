@@ -18,8 +18,14 @@ const TIMEOUT_MS = 15_000;
 const MAX_REQUEST_BYTES = 16_000;
 const MAX_RESPONSE_BYTES = 5_000_000;
 
-/** Portugal continental, Açores, Madeira e Espanha: [oeste, sul, este, norte]. */
-const BBOX = [-31.5, 32, 4.5, 44] as const;
+/**
+ * Península Ibérica, Açores, Madeira e Baleares; Canárias e Selvagens: [oeste, sul, este, norte].
+ * Cópia de ROUTING_AREAS em packages/core/src/routing.ts (um teste confirma que são iguais).
+ */
+export const ROUTING_AREAS = [
+  [-31.5, 32, 4.5, 44],
+  [-18.5, 27.4, -13.2, 30.2],
+] as const;
 const MAX_LOCATIONS = 10;
 const MAX_ALTERNATES = 2;
 
@@ -74,8 +80,12 @@ function finite(value: unknown, min: number, max: number, field: string): number
 
 function sanitizeLocation(value: unknown) {
   if (!isRecord(value)) throw new BadRequest('locations');
-  const lat = finite(value.lat, BBOX[1], BBOX[3], 'locations');
-  const lon = finite(value.lon, BBOX[0], BBOX[2], 'locations');
+  const lat = finite(value.lat, -90, 90, 'locations');
+  const lon = finite(value.lon, -180, 180, 'locations');
+  const inside = ROUTING_AREAS.some(
+    ([west, south, east, north]) => lon >= west && lon <= east && lat >= south && lat <= north,
+  );
+  if (!inside) throw new BadRequest('locations');
   if (value.type !== undefined && value.type !== 'break') throw new BadRequest('locations');
   const location: Record<string, unknown> = { lat, lon, type: 'break' };
   if (value.heading !== undefined) {
@@ -104,7 +114,10 @@ export function sanitizeRouteRequest(body: unknown): Record<string, unknown> {
     for (const [key, value] of Object.entries(costingOptions)) {
       if (key !== costing || !isRecord(value)) throw new BadRequest('costing_options');
       for (const [option, optionValue] of Object.entries(value)) {
-        const rule = COSTING_OPTION_RULES[option];
+        // Só chaves próprias: "constructor" ou "toString" não podem passar pela lista.
+        const rule = Object.hasOwn(COSTING_OPTION_RULES, option)
+          ? COSTING_OPTION_RULES[option]
+          : undefined;
         if (!rule || !rule(optionValue)) throw new BadRequest('costing_options');
         options[option] = optionValue;
       }
@@ -182,7 +195,12 @@ async function readLimited(
 
 /** Erro 400 do Valhalla: devolvemos só o código e a mensagem (texto curto). */
 async function forwardRouteError(response: Response): Promise<Response> {
-  const bytes = await readLimited(response.body, response.headers.get('content-length'), 10_000);
+  let bytes: Uint8Array | null = null;
+  try {
+    bytes = await readLimited(response.body, response.headers.get('content-length'), 10_000);
+  } catch {
+    // Ligação cortada ou tempo esgotado a meio do corpo: devolve o erro sem detalhes.
+  }
   let errorCode: number | undefined;
   let message: string | undefined;
   try {
@@ -279,11 +297,21 @@ export async function handleRouteRequest(
     return json({ error: 'upstream_bad_content_type' }, 502);
   }
 
-  const body = await readLimited(
-    upstreamResponse.body,
-    upstreamResponse.headers.get('content-length'),
-    options.maxResponseBytes ?? MAX_RESPONSE_BYTES,
-  );
+  // O tempo máximo também se aplica à leitura do corpo, que pode falhar a meio.
+  let body: Uint8Array<ArrayBuffer> | null;
+  try {
+    body = await readLimited(
+      upstreamResponse.body,
+      upstreamResponse.headers.get('content-length'),
+      options.maxResponseBytes ?? MAX_RESPONSE_BYTES,
+    );
+  } catch (error) {
+    const timedOut = error instanceof Error && error.name === 'TimeoutError';
+    return json(
+      { error: timedOut ? 'upstream_timeout' : 'upstream_unreachable' },
+      timedOut ? 504 : 502,
+    );
+  }
   if (!body) return json({ error: 'upstream_too_large' }, 502);
 
   return new Response(body, {

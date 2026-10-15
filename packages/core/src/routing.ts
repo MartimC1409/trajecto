@@ -13,10 +13,15 @@ export const MAX_WAYPOINTS = 10;
 export const MAX_ALTERNATIVES = 2;
 
 /**
- * Área onde aceitamos pedidos de rota: Portugal continental, Açores, Madeira e Espanha.
- * Serve para não usar o servidor público para fins alheios ao projeto.
+ * Áreas onde aceitamos pedidos de rota: Península Ibérica, Açores, Madeira e Baleares numa
+ * caixa, e Canárias (com as Selvagens) noutra. Serve para não usar o servidor público para
+ * fins alheios ao projeto. A função /api/route tem uma cópia destes valores (e um teste que
+ * confirma que são iguais).
  */
-export const ROUTING_BBOX: BBox = [-31.5, 32, 4.5, 44];
+export const ROUTING_AREAS: readonly BBox[] = [
+  [-31.5, 32, 4.5, 44],
+  [-18.5, 27.4, -13.2, 30.2],
+];
 
 export interface RoutePreferences {
   readonly avoidTolls: boolean;
@@ -206,6 +211,10 @@ export class RouterError extends Error {
     this.code = code;
     this.status = status;
   }
+}
+
+export function isInsideRoutingArea(point: LngLat): boolean {
+  return ROUTING_AREAS.some((bbox) => isInsideBBox(point, bbox));
 }
 
 export function isInsideBBox(point: LngLat, bbox: BBox): boolean {

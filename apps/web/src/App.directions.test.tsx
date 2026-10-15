@@ -116,7 +116,12 @@ describe('Direções', () => {
     const panel = await openDirections(user);
     await waitFor(() => expect(router.route).toHaveBeenCalledTimes(1), SLOW);
     await user.click(within(panel).getByRole('radio', { name: 'A pé' }));
+    // Enquanto a rota nova não chega, não se pode iniciar com a rota antiga.
+    expect(within(panel).getByRole('button', { name: 'Simular' })).toBeDisabled();
     await waitFor(() => expect(router.route).toHaveBeenCalledTimes(2), SLOW);
+    await waitFor(() =>
+      expect(within(panel).getByRole('button', { name: 'Simular' })).toBeEnabled(),
+    );
     expect(router.route.mock.calls[1]?.[0]).toMatchObject({ mode: 'walk' });
     expect(services.preferences.getSnapshot().travelMode).toBe('walk');
 
@@ -246,6 +251,8 @@ describe('Direções', () => {
     await user.click(await within(nav).findByRole('button', { name: 'Recentrar' }));
     expect(mapProps.current?.navigation?.follow).toBe(true);
 
+    // Tocar na rota durante a navegação não muda a rota escolhida no painel.
+    mapProps.current?.onRouteClick?.(1);
     await user.click(within(nav).getByRole('button', { name: 'Velocidade da simulação: 4×' }));
     expect(
       within(nav).getByRole('button', { name: 'Velocidade da simulação: 4×' }),
@@ -255,5 +262,35 @@ describe('Direções', () => {
     expect(screen.getByRole('region', { name: 'Direções' })).toBeVisible();
     expect(screen.getByRole('heading', { name: 'Direções' })).toHaveFocus();
     expect(mapProps.current?.navigation).toBeNull();
+    expect(mapProps.current?.selectedRoute).toBe(0);
+  });
+
+  it('com a voz desligada, ligar a voz durante a viagem diz uma frase no próprio toque', async () => {
+    const speak = vi.fn();
+    vi.stubGlobal(
+      'SpeechSynthesisUtterance',
+      class {
+        volume = 1;
+        lang = '';
+        constructor(public text: string) {}
+      },
+    );
+    vi.stubGlobal('speechSynthesis', { speak, cancel: vi.fn(), getVoices: () => [] });
+    try {
+      const { user, services } = setup();
+      services.preferences.set('voiceGuidance', false);
+      const panel = await openDirections(user);
+      await user.click(await within(panel).findByRole('button', { name: 'Simular' }, SLOW));
+      // Ao iniciar sem voz, a voz é ativada em silêncio (para o iPhone a deixar usar depois).
+      expect(speak.mock.calls[0]?.[0]).toMatchObject({ text: ' ', volume: 0 });
+      const nav = screen.getByRole('region', { name: 'Navegação' });
+      await user.click(within(nav).getByRole('button', { name: 'Ligar instruções por voz' }));
+      expect(speak.mock.calls.at(-1)?.[0]).toMatchObject({ text: 'Instruções por voz ligadas.' });
+      expect(services.preferences.getSnapshot().voiceGuidance).toBe(true);
+      await user.click(within(nav).getByRole('button', { name: 'Desligar instruções por voz' }));
+      expect(services.preferences.getSnapshot().voiceGuidance).toBe(false);
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 });

@@ -135,6 +135,7 @@ export const ptPT = {
     end: 'Terminar',
     voiceOn: 'Ligar instruções por voz',
     voiceOff: 'Desligar instruções por voz',
+    voiceEnabled: 'Instruções por voz ligadas.',
     recenter: 'Recentrar',
     rerouting: 'A recalcular a rota…',
     rerouteFailed: 'Não foi possível recalcular a rota. Vou tentar de novo.',

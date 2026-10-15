@@ -27,12 +27,13 @@ Decisões, limites e termos dos serviços: [ADR 0011](../adr/0011-rotas-e-navega
 | Lint (ESLint) | `pnpm lint` | ✅ sem erros nem avisos |
 | Formatação (Prettier) | `pnpm format:check` | ✅ |
 | Tipos (TypeScript 6.0.3) | `pnpm typecheck` | ✅ |
-| Testes unitários `@trajecto/core` | `pnpm test:coverage` | ✅ 118 testes; linhas 100 %, instruções 99,5 % (meta ≥80 %) |
-| Testes unitários `@trajecto/web` | `pnpm test:coverage` | ✅ 162 testes; linhas 97,7 %, instruções 96 % (meta ≥70 %) |
+| Testes unitários `@trajecto/core` | `pnpm test:coverage` | ✅ 122 testes; linhas 99,4 %, instruções 99,1 % (meta ≥80 %) |
+| Testes unitários `@trajecto/web` | `pnpm test:coverage` | ✅ 169 testes; linhas 97,9 %, instruções 96,2 % (meta ≥70 %) |
 | Build de produção | `pnpm build` | ✅ |
 | Testes ponta a ponta: Chromium desktop e Android | `pnpm test:e2e` | ✅ 29 passaram, 1 ignorado de propósito (toque no desktop) |
 | Acessibilidade WCAG 2.2 AA (axe-core) | incluído no `pnpm test:e2e` | ✅ 0 violações no painel de direções e no ecrã de navegação |
 | CSP | incluído no `pnpm test:e2e` | ✅ 0 violações, incluindo o campo de data e hora (Chromium) |
+| Testes ponta a ponta no CI: desktop, Android e iPhone (WebKit) | GitHub Actions | ✅ commit `14453eb` ([execução 38604783252](https://github.com/MartimC1409/trajecto/actions/runs/38604783252)) |
 
 Os testes ponta a ponta das rotas usam uma resposta do Valhalla gravada no formato oficial
 (`apps/web/e2e/fixtures/valhalla.ts`) e posições GPS simuladas pelo Playwright.
@@ -44,6 +45,34 @@ Os testes ponta a ponta das rotas usam uma resposta do Valhalla gravada no forma
   com o servidor real é o item 1 da lista abaixo.
 - **Voz e ecrã ligado num telemóvel real:** dependem do sistema; só podem ser testados no iPhone.
 - **Campo de data e hora no WebKit:** o teste é ignorado no WebKit até ser validado no CI.
+
+## Revisão crítica (agentes independentes)
+
+Três revisores analisaram o motor de navegação, a função `/api/route` e a interface; cada
+problema foi confirmado por outro agente (alguns reproduzidos com o código real) antes de ser
+corrigido. Corrigido:
+
+| Problema | Correção |
+|---|---|
+| Em rotas de ida e volta pela mesma estrada, a posição saltava para a volta: avisos errados e recálculos desnecessários | Associação pela ordem da rota, com avanço plausível e direção do GPS; testes de ida e volta |
+| Chegada dada por passar perto do destino na outra faixa, antes de dar a volta | A distância em linha reta só conta perto do fim da rota |
+| Sem velocidade do GPS, um salto na rota parecia uma velocidade enorme e a instrução era dita cedo demais | Velocidade só entre posições seguidas na rota, com limite por modo |
+| O intervalo de 15 s entre recálculos recomeçava a cada rota nova | Intervalo contado na sessão de navegação |
+| Depois de recalcular, o ecrã mostrava a manobra da rota antiga | Estado recalculado logo com a última posição |
+| "Iniciar" usava a rota anterior enquanto a nova ainda estava a ser calculada | Só ativo com o resultado do pedido atual |
+| No iPhone, ligar a voz a meio da viagem ficava em silêncio | A voz é ativada no próprio toque |
+| O botão de localização do mapa mexia na câmara durante a navegação | Botão retirado durante a navegação e reposto no fim |
+| Ao terminar, o mapa ficava no último ponto em vez de mostrar as rotas | Um só movimento de câmara |
+| Tocar na rota durante a navegação mudava a rota escolhida | Ignorado durante a navegação |
+| Foco perdido ao fechar a pesquisa de um ponto; avisos de estado nem sempre anunciados | Foco no título; região de estado sempre presente |
+| A função aceitava as chaves herdadas `constructor` e `toString` nas opções | Só chaves próprias da lista |
+| Uma ligação cortada a meio da resposta fazia a função falhar sem resposta | Resposta 502/504 em JSON |
+| Canárias fora da área suportada | Área com uma segunda caixa (Canárias e Selvagens) |
+
+Recusados depois de verificados (não eram defeitos reais): aviso de chegada a uma paragem
+dito ~70 m antes (é o comportamento definido pelo Valhalla para avisos imediatos); paragem
+"não alcançada" quando se estaciona a mais de ~45 m da rota; ausência de limite de pedidos na
+função (já documentado como uso pessoal; o cabeçalho `Sec-Fetch-Site` só protege browsers).
 
 ## Lista de verificação manual (para fazeres tu, no iPhone)
 

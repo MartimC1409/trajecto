@@ -1,7 +1,7 @@
 // @vitest-environment node
-import { buildValhallaRequest } from '@trajecto/core';
+import { ROUTING_AREAS as CORE_AREAS, buildValhallaRequest } from '@trajecto/core';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { POST, handleRouteRequest, sanitizeRouteRequest } from '../../api/route';
+import { POST, ROUTING_AREAS, handleRouteRequest, sanitizeRouteRequest } from '../../api/route';
 
 const URL = 'https://trajecto.example/api/route';
 
@@ -76,6 +76,17 @@ describe('sanitizeRouteRequest', () => {
     expect(sanitizeRouteRequest(JSON.parse(JSON.stringify(timed)))).toEqual(timed);
   });
 
+  it('usa as mesmas áreas que a aplicação, incluindo as Canárias', () => {
+    expect(ROUTING_AREAS).toEqual(CORE_AREAS);
+    const tenerife = [
+      { lat: 28.4636, lon: -16.2518 },
+      { lat: 28.4874, lon: -16.3159 },
+    ];
+    expect(sanitizeRouteRequest({ ...VALID, locations: tenerife }).locations).toEqual(
+      tenerife.map((l) => ({ ...l, type: 'break' })),
+    );
+  });
+
   it('descarta campos desconhecidos e força unidades e formato', () => {
     const result = sanitizeRouteRequest({
       ...VALID,
@@ -121,6 +132,9 @@ describe('sanitizeRouteRequest', () => {
     ['costing_options', { ...VALID, costing_options: { bicycle: {} } }],
     ['costing_options', { ...VALID, costing_options: { auto: { top_speed: 300 } } }],
     ['costing_options', { ...VALID, costing_options: { auto: { use_tolls: 7 } } }],
+    ['costing_options', { ...VALID, costing_options: { auto: { constructor: { a: 1 } } } }],
+    ['costing_options', { ...VALID, costing_options: { auto: { toString: 1 } } }],
+    ['locations', { ...VALID, locations: [{ lat: 31.63, lon: -8 }, VALID.locations[1]] }],
     ['date_time', { ...VALID, date_time: { type: 0, value: '2026-10-14T08:00' } }],
     ['date_time', { ...VALID, date_time: { type: 1, value: '2026-10-14 08:00' } }],
     ['alternates', { ...VALID, alternates: 3 }],
@@ -222,6 +236,27 @@ describe('função route (proxy para o Valhalla)', () => {
     expect((await offline.call(post(VALID))).status).toBe(502);
     const slow = setup(() => Promise.reject(new DOMException('timeout', 'TimeoutError')));
     expect((await slow.call(post(VALID))).status).toBe(504);
+  });
+
+  it('responde com erro quando a ligação cai a meio do corpo da resposta', async () => {
+    const failing = (error: Error, status = 200) =>
+      new Response(
+        new ReadableStream({
+          start(controller) {
+            controller.enqueue(new TextEncoder().encode('{"trip":'));
+            controller.error(error);
+          },
+        }),
+        { status, headers: { 'Content-Type': 'application/json' } },
+      );
+    const timeout = setup(failing(new DOMException('timeout', 'TimeoutError')));
+    expect((await timeout.call(post(VALID))).status).toBe(504);
+    const reset = setup(failing(new TypeError('terminated')));
+    expect(await (await reset.call(post(VALID))).json()).toEqual({ error: 'upstream_unreachable' });
+    const brokenError = setup(failing(new TypeError('terminated'), 400));
+    const response = await brokenError.call(post(VALID));
+    expect(response.status).toBe(400);
+    expect(await response.json()).toEqual({ error: 'route_error' });
   });
 
   it('expõe POST para o Vercel, com destino configurável', async () => {

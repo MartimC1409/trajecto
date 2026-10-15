@@ -11,6 +11,8 @@ export interface NavigationControls {
   readonly voiceSupported: boolean;
   /** Tem de ser chamado diretamente no clique do utilizador (o iPhone só ativa a voz assim). */
   start(target: NavigationTarget): void;
+  /** Liga ou desliga a voz; tem de ser chamado no toque do utilizador (iPhone). */
+  setVoiceEnabled(enabled: boolean): void;
   stop(): void;
   setSimulationSpeed(factor: number): void;
 }
@@ -18,6 +20,7 @@ export interface NavigationControls {
 export function useNavigation(
   services: Pick<Services, 'router' | 'geolocation'>,
   voiceEnabled: boolean,
+  onVoiceChange: (enabled: boolean) => void,
 ): NavigationControls {
   const { t, i18n } = useTranslation();
   const [state, setState] = useState<NavigationState | null>(null);
@@ -69,8 +72,16 @@ export function useNavigation(
     state,
     voiceSupported: speaker.supported,
     start(target) {
+      // Dentro do toque: com a voz ligada diz "A iniciar…"; desligada, só ativa a voz em silêncio
+      // para poder ser ligada mais tarde durante a viagem.
       if (voiceEnabled) speaker.speak([t('nav.starting')]);
+      else speaker.unlock();
       getSession().start(target);
+    },
+    setVoiceEnabled(enabled) {
+      if (enabled) speaker.speak([t('nav.voiceEnabled')]);
+      else speaker.cancel();
+      onVoiceChange(enabled);
     },
     stop() {
       sessionRef.current?.stop();

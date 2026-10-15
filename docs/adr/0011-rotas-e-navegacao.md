@@ -17,8 +17,8 @@ o Vercel e o iPhone não chegam a um servidor que corre no computador de casa.
    (`apps/web/api/route.ts`). A mesma função é usada em desenvolvimento pelo Vite.
    - A variável `ROUTER_UPSTREAM` permite trocar para um Valhalla próprio sem mudar código.
 2. **A função valida e reconstrói cada pedido:** só POST com JSON, só pedidos da própria
-   aplicação (`Sec-Fetch-Site`), no máximo 16 KB, 2 a 10 pontos dentro de Portugal, Açores,
-   Madeira e Espanha, modos `auto`, `motorcycle`, `pedestrian` e `bicycle`, e só as opções
+   aplicação (`Sec-Fetch-Site`), no máximo 16 KB, 2 a 10 pontos dentro de Portugal (com Açores,
+   Madeira e Selvagens) e Espanha (com Baleares e Canárias), modos `auto`, `motorcycle`, `pedestrian` e `bicycle`, e só as opções
    `use_tolls`, `use_highways`, `use_ferry` e `shortest`. Não envia cookies nem cabeçalhos do
    visitante e as respostas não ficam em cache (`no-store`).
 3. **Preferências de rota:** usamos `use_tolls`, `use_highways` e `use_ferry` com valor 0
@@ -34,7 +34,9 @@ o Vercel e o iPhone não chegam a um servidor que corre no computador de casa.
    rota (distância ou sentido contrário em várias posições seguidas), chegada, e avisos
    falados (aviso antecipado ~25 s antes, aviso imediato ~7 s antes, "Continue durante…").
 6. **Recálculo** a partir da posição atual, com a direção do GPS, no máximo uma vez a cada
-   15 s (respeita o limite do servidor público).
+   15 s em toda a viagem (respeita o limite do servidor público). Onde a rota passa duas vezes
+   pela mesma estrada (ida e volta, inversão de marcha), a posição é associada ao troço certo
+   pela ordem da rota e pela direção do GPS.
 7. **No browser:** voz com a Web Speech API (vozes do próprio dispositivo), ecrã ligado com a
    Screen Wake Lock API, posição com `watchPosition` de alta precisão. Há um modo de
    **simulação** para testar sem sair de casa.
