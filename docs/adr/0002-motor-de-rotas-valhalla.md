@@ -1,7 +1,12 @@
 # ADR 0002: Motor de rotas: Valhalla
 
-- **Estado:** Aceite (2026-10-14)
+- **Estado:** Aceite (2026-10-14), atualizado pelo [ADR 0011](0011-rotas-e-navegacao.md)
 - **Data:** 2026-10-14
+
+> **Atualização (Fases 2 e 3):** em vez de Docker local, usamos o servidor público da FOSSGIS
+> através de uma função própria no Vercel, para funcionar no telemóvel. As opções `exclude_*`
+> são experimentais e dependem da configuração do servidor; usamos `use_tolls`, `use_highways`
+> e `use_ferry`. Detalhes no ADR 0011.
 
 ## Contexto
 

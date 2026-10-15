@@ -20,5 +20,6 @@ Estados possíveis:
 | [0008](0008-reportes-de-policia.md) | Reportes de polícia | Aceite | 2026-10-14 |
 | [0009](0009-backend-dados-tempo-real.md) | Backend, dados e tempo real | Aceite | 2026-10-14 |
 | [0010](0010-qualidade-e-armazenamento-fase-1.md) | Qualidade, acessibilidade e armazenamento local (Fase 1) | Aceite | 2026-10-14 |
+| [0011](0011-rotas-e-navegacao.md) | Rotas e navegação (Fases 2 e 3) | Aceite | 2026-10-14 |
 
 O contexto completo está em [`../fase-0-planeamento.md`](../fase-0-planeamento.md).

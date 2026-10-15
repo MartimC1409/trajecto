@@ -21,9 +21,17 @@ interface PlaceSheetProps {
   readonly feedback: string | null;
   readonly onToggle: (kind: Favorite['kind']) => void;
   readonly onClose: () => void;
+  readonly onDirections?: (place: Place) => void;
 }
 
-export function PlaceSheet({ selection, favorites, feedback, onToggle, onClose }: PlaceSheetProps) {
+export function PlaceSheet({
+  selection,
+  favorites,
+  feedback,
+  onToggle,
+  onClose,
+  onDirections,
+}: PlaceSheetProps) {
   const { t } = useTranslation();
   const titleId = useId();
 
@@ -63,6 +71,18 @@ export function PlaceSheet({ selection, favorites, feedback, onToggle, onClose }
         {formatLngLat(header.lngLat)}
       </p>
 
+      {selection.status === 'ready' && onDirections && (
+        <div className="sheet-actions">
+          <button
+            type="button"
+            className="button primary"
+            onClick={() => onDirections(selection.place)}
+          >
+            <Icon name="directions" />
+            {t('directions.open')}
+          </button>
+        </div>
+      )}
       {selection.status === 'ready' && (
         <div className="sheet-actions" role="group" aria-label={t('place.saveAs')}>
           {(['home', 'work', 'other'] as const).map((kind) => (

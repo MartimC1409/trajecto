@@ -5,5 +5,14 @@
     "jsx": "react-jsx",
     "types": ["vite/client", "node", "@testing-library/jest-dom/vitest"]
   },
-  "include": ["src", "e2e", "scripts", "vite.config.ts", "playwright.config.ts"]
+  "include": [
+    "src",
+    "api",
+    "e2e",
+    "scripts",
+    "vite.config.ts",
+    "playwright.config.ts",
+    "security-headers.ts",
+    "vite-api-plugin.ts"
+  ]
 }

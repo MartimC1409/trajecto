@@ -1,13 +1,14 @@
 import type {
   Favorite,
+  FuelPreferences,
   HistoryEntry,
   Language,
   Place,
   Preferences,
   ThemePreference,
 } from '@trajecto/core';
-import { LANGUAGES, sortFavorites } from '@trajecto/core';
-import { useEffect, useId, useRef } from 'react';
+import { FUEL_LIMITS, LANGUAGES, sortFavorites } from '@trajecto/core';
+import { useEffect, useId, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { LANGUAGE_NAMES } from '../i18n';
 import { ConfirmButton } from './ConfirmButton';
@@ -29,6 +30,55 @@ interface MenuProps {
   readonly onSetTheme: (theme: ThemePreference) => void;
   readonly onSetLanguage: (language: Language) => void;
   readonly onSetHistoryEnabled: (enabled: boolean) => void;
+  readonly onSetVoiceGuidance: (enabled: boolean) => void;
+  readonly onSetFuel: (fuel: FuelPreferences) => void;
+}
+
+/** Campo numérico que aceita vírgula decimal e só grava valores dentro dos limites. */
+function NumberField(props: {
+  readonly label: string;
+  readonly value: number;
+  readonly min: number;
+  readonly max: number;
+  readonly describedBy: string;
+  readonly onChange: (value: number) => void;
+}) {
+  const format = (value: number) => String(value).replace('.', ',');
+  const [text, setText] = useState(() => format(props.value));
+  const [shown, setShown] = useState(props.value);
+  const parsed = Number(text.trim().replace(',', '.'));
+  // O valor mudou fora deste campo (por exemplo, ao apagar todos os dados): mostrar o novo.
+  if (props.value !== shown) {
+    setShown(props.value);
+    if (parsed !== props.value) setText(format(props.value));
+  }
+  const valid =
+    text.trim() !== '' && Number.isFinite(parsed) && parsed >= props.min && parsed <= props.max;
+  return (
+    <label className="number-field">
+      <span>{props.label}</span>
+      <input
+        type="text"
+        inputMode="decimal"
+        autoComplete="off"
+        value={text}
+        aria-invalid={!valid}
+        aria-describedby={props.describedBy}
+        onChange={(event) => {
+          setText(event.target.value);
+          const value = Number(event.target.value.trim().replace(',', '.'));
+          if (
+            event.target.value.trim() !== '' &&
+            Number.isFinite(value) &&
+            value >= props.min &&
+            value <= props.max
+          ) {
+            props.onChange(value);
+          }
+        }}
+      />
+    </label>
+  );
 }
 
 const THEMES = [
@@ -206,6 +256,57 @@ export function Menu(props: MenuProps) {
             {t('settings.historyHint')}
           </p>
         </div>
+        <h4>{t('settings.navigation')}</h4>
+        <div className="field">
+          <label className="checkbox">
+            <input
+              type="checkbox"
+              checked={props.preferences.voiceGuidance}
+              aria-describedby={`${titleId}-voice-hint`}
+              onChange={(event) => props.onSetVoiceGuidance(event.target.checked)}
+            />
+            {t('settings.voice')}
+          </label>
+          <p id={`${titleId}-voice-hint`} className="muted">
+            {t('settings.voiceHint')}
+          </p>
+        </div>
+        <fieldset className="field">
+          <legend>{t('settings.fuel')}</legend>
+          <NumberField
+            label={t('settings.carConsumption')}
+            value={props.preferences.fuel.carLitresPer100Km}
+            min={FUEL_LIMITS.litresPer100Km.min}
+            max={FUEL_LIMITS.litresPer100Km.max}
+            describedBy={`${titleId}-fuel-hint`}
+            onChange={(value) =>
+              props.onSetFuel({ ...props.preferences.fuel, carLitresPer100Km: value })
+            }
+          />
+          <NumberField
+            label={t('settings.motorcycleConsumption')}
+            value={props.preferences.fuel.motorcycleLitresPer100Km}
+            min={FUEL_LIMITS.litresPer100Km.min}
+            max={FUEL_LIMITS.litresPer100Km.max}
+            describedBy={`${titleId}-fuel-hint`}
+            onChange={(value) =>
+              props.onSetFuel({ ...props.preferences.fuel, motorcycleLitresPer100Km: value })
+            }
+          />
+          <NumberField
+            label={t('settings.fuelPrice')}
+            value={props.preferences.fuel.pricePerLitre}
+            min={FUEL_LIMITS.pricePerLitre.min}
+            max={FUEL_LIMITS.pricePerLitre.max}
+            describedBy={`${titleId}-fuel-hint`}
+            onChange={(value) =>
+              props.onSetFuel({ ...props.preferences.fuel, pricePerLitre: value })
+            }
+          />
+          <p id={`${titleId}-fuel-hint`} className="muted">
+            {t('settings.fuelHint')}
+          </p>
+        </fieldset>
         <div className="field">
           <ConfirmButton
             label={t('settings.clearAll')}
@@ -220,6 +321,7 @@ export function Menu(props: MenuProps) {
         <h3 id={`${titleId}-about`}>{t('menu.about')}</h3>
         <p>{t('about.text')}</p>
         <p className="muted">{t('about.privacy')}</p>
+        <p className="muted">{t('about.routingPrivacy')}</p>
         <h4>{t('about.dataTitle')}</h4>
         <ul className="attributions">
           <li>
@@ -239,6 +341,15 @@ export function Menu(props: MenuProps) {
           <li>
             <a href="https://photon.komoot.io/" target="_blank" rel="noopener noreferrer">
               {t('about.photon')}
+            </a>
+          </li>
+          <li>
+            <a
+              href="https://valhalla.github.io/valhalla/"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {t('about.valhalla')}
             </a>
           </li>
           <li>{t('about.fonts')}</li>

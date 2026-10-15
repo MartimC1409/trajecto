@@ -5,7 +5,8 @@
   "type": "module",
   "description": "Lógica de domínio do Trajecto (sem dependências do browser).",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./testing": "./src/testing/valhalla-fixtures.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
