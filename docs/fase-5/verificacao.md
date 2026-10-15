@@ -34,7 +34,10 @@ meteorologia para 3 pontos. O workflow volta a correr todas as segundas-feiras.
 - **Avisos na navegação:** reportes e radares em cima da rota aparecem a partir de 2 km e são
   ditos em voz alta uma vez (com o limite de velocidade, quando o radar o tem).
 - **Radares fixos:** do OpenStreetMap (ODbL), atualizados uma vez por mês por um workflow do
-  GitHub Actions. Interruptor "Avisar radares fixos" no menu.
+  GitHub Actions. Interruptor "Avisar radares fixos" no menu. Primeira extração (2026-10-15):
+  **341 radares** (300 nós `highway=speed_camera` e 41 relações de fiscalização), 292 com limite
+  de velocidade e 56 com direção. Nenhuma relação estava marcada como velocidade média
+  (`average_speed`), por isso esses troços aparecem como radares normais ou não aparecem.
 - **Definições:** mostrar e avisar reportes de polícia (ligado), radares fixos (ligado) e
   "Apagar todos os reportes".
 - **Privacidade:** os reportes ficam só neste dispositivo; nada é enviado para servidores.
@@ -67,12 +70,14 @@ Correção do arranque:
 
 Reportes e radares:
 
-4. [ ] No mapa, tocar num ponto → **Reportar aqui** → **Obras**: aparece o ícone no mapa.
-5. [ ] Tocar no ícone → **Ainda lá está**: aparece "Obrigado: o reporte fica mais tempo."
-6. [ ] Criar um reporte em cima de uma rua, pedir direções que passem nela e tocar em
+4. [ ] Pedir direções por uma estrada onde saibas que há um radar fixo e tocar em **Simular**:
+   perto do radar aparece "Radar fixo a … m" (com o limite, quando o OSM o tem).
+5. [ ] No mapa, tocar num ponto → **Reportar aqui** → **Obras**: aparece o ícone no mapa.
+6. [ ] Tocar no ícone → **Ainda lá está**: aparece "Obrigado: o reporte fica mais tempo."
+7. [ ] Criar um reporte em cima de uma rua, pedir direções que passem nela e tocar em
    **Simular**: ao aproximar, aparece "Obras a … m" e a voz avisa uma vez.
-7. [ ] Durante a navegação, tocar em **Reportar** → **Polícia**: o reporte fica no mapa e
+8. [ ] Durante a navegação, tocar em **Reportar** → **Polícia**: o reporte fica no mapa e
    desaparece ao fim de 60 minutos.
-8. [ ] No menu, desligar "Mostrar e avisar reportes de polícia": os reportes de polícia deixam de
+9. [ ] No menu, desligar "Mostrar e avisar reportes de polícia": os reportes de polícia deixam de
    aparecer.
-9. [ ] No menu, **Apagar todos os reportes**: o mapa fica sem reportes.
+10. [ ] No menu, **Apagar todos os reportes**: o mapa fica sem reportes.

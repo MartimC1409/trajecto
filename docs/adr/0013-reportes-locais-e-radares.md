@@ -34,7 +34,8 @@ serem vistos por outras pessoas (ADR 0008, ponto 5).
    - nós `highway=speed_camera` e relações `type=enforcement` (`enforcement=maxspeed` ou
      `average_speed`) em Portugal, com limite (`maxspeed`) e direção quando existem;
    - extraídos **uma vez por mês** por um workflow do GitHub Actions (`speed-cameras.yml`), com
-     um User-Agent próprio e uma pausa de 30 s se o Overpass responder 429. O resultado fica em
+     um User-Agent próprio e uma só consulta; se o Overpass falhar (por exemplo, 429), o workflow
+     termina com erro, o ficheiro anterior fica como está e tenta-se mais tarde. O resultado fica em
      `apps/web/public/data/speed-cameras.json` e a app nunca consulta o Overpass diretamente
      (as regras do servidor público pedem poucas consultas);
    - podem ser desligados nas definições ("Avisar radares fixos").
