@@ -10,13 +10,16 @@
 import { mkdir, writeFile } from 'node:fs/promises';
 import type { LngLat, RouteRequest } from '@trajecto/core';
 import {
+  createTransitPlanner,
   createValhallaRouter,
   createWeatherProvider,
   parseSpeedCameras,
+  parseTransitResponse,
   parseValhallaResponse,
 } from '@trajecto/core';
 import { describe, expect, it } from 'vitest';
 import { handleRouteRequest } from '../../api/route';
+import { handleTransitRequest } from '../../api/transit';
 import { handleWeatherRequest } from '../../api/weather';
 
 const LIVE = process.env.TRAJECTO_LIVE === '1';
@@ -118,6 +121,32 @@ describe.skipIf(!LIVE)('serviços reais', () => {
       }
       console.warn(`${name}: HTTP ${String(last.status)}, ${String(routes.length)} rota(s)`);
       expect(routes[0]?.maneuvers.length).toBeGreaterThan(1);
+      await pause();
+    }
+  }, 90_000);
+
+  it('transportes: Lisboa (metro) e Porto, pelo Transitous', async () => {
+    const { fetchImpl, last } = throughHandler((r) => handleTransitRequest(r));
+    const planner = createTransitPlanner({ url: '/api/transit', fetch: fetchImpl });
+    const cases: [string, LngLat, LngLat][] = [
+      ['lisboa', { lng: -9.1404, lat: 38.7139 }, { lng: -9.1442, lat: 38.7533 }],
+      ['porto', { lng: -8.6107, lat: 41.1456 }, { lng: -8.5979, lat: 41.1784 }],
+    ];
+    for (const [name, from, to] of cases) {
+      let itineraries;
+      try {
+        itineraries = await planner.plan({ from, to });
+      } finally {
+        await save(`transit-${name}.json`, last);
+      }
+      const first = itineraries[0];
+      console.warn(
+        `transportes ${name}: HTTP ${String(last.status)}, ${String(itineraries.length)} opção(ões);`,
+        first?.legs.map((l) => `${l.mode}${l.line ? ` ${l.line}` : ''}`).join(' → '),
+      );
+      expect(itineraries.length).toBeGreaterThan(0);
+      expect(parseTransitResponse(last.body).length).toBe(itineraries.length);
+      expect(itineraries.some((it) => it.legs.some((l) => l.kind !== 'walk'))).toBe(true);
       await pause();
     }
   }, 90_000);

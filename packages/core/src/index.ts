@@ -20,3 +20,4 @@ export * from './weather';
 export * from './reports';
 export * from './route-alerts';
 export * from './speed-cameras';
+export * from './transit';
