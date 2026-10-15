@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "description": "Trajecto: mapas e navegação para Portugal (projeto pessoal).",
+  "license": "MIT",
   "packageManager": "pnpm@12.11.2",
   "engines": {
     "node": ">=24.21.0"

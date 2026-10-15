@@ -106,6 +106,12 @@ Os teus favoritos, histórico e definições **nunca saem do dispositivo**.
 - Meteorologia: [Open-Meteo.com](https://open-meteo.com), CC BY 4.0.
 - Fontes Noto Sans: SIL Open Font License 1.1.
 
+## Licença
+
+- **Código:** [MIT](LICENSE). Podes usar, copiar e alterar o código, mantendo o aviso de copyright.
+- **Dados de terceiros** (não são MIT): os radares em `apps/web/public/data/` continuam sob a ODbL
+  do OpenStreetMap; a meteorologia, os mapas e as fontes seguem as licenças indicadas acima.
+
 ## Documentação
 
 - [Fase 0: planeamento, stack e requisitos](docs/fase-0-planeamento.md)
