@@ -409,24 +409,6 @@ export function DirectionsPanel(props: DirectionsPanelProps) {
           <div className="sheet-actions">
             <button
               type="button"
-              className="button primary"
-              disabled={!canNavigate}
-              onClick={() => start(false)}
-            >
-              <Icon name="navigation" />
-              {t('directions.start')}
-            </button>
-            <button
-              type="button"
-              className="button"
-              disabled={!fresh || !selected}
-              onClick={() => start(true)}
-            >
-              <Icon name="play" />
-              {t('directions.simulate')}
-            </button>
-            <button
-              type="button"
               className="button"
               aria-expanded={stepsOpen}
               aria-controls={`${id}-steps`}
@@ -436,9 +418,6 @@ export function DirectionsPanel(props: DirectionsPanelProps) {
               {stepsOpen ? t('directions.hideSteps') : t('directions.showSteps')}
             </button>
           </div>
-          {origin.kind !== 'current' && (
-            <p className="muted">{t('directions.startNeedsLocation')}</p>
-          )}
           <RouteWeather state={weatherState} />
         </>
       )}
@@ -543,6 +522,41 @@ export function DirectionsPanel(props: DirectionsPanelProps) {
             </li>
           ))}
         </ol>
+      )}
+
+      {/* "Iniciar" e "Simular" ficam sempre visíveis no fundo do painel: no telemóvel o painel é
+          baixo e, no meio do conteúdo, o botão ficava escondido abaixo do ecrã. */}
+      {shown && (
+        <div className="start-bar">
+          <div className="sheet-actions">
+            <button
+              type="button"
+              className="button primary"
+              disabled={!canNavigate}
+              onClick={() => start(false)}
+            >
+              <Icon name="navigation" />
+              {t('directions.start')}
+            </button>
+            <button
+              type="button"
+              className="button"
+              disabled={!fresh || !selected}
+              onClick={() => start(true)}
+            >
+              <Icon name="play" />
+              {t('directions.simulate')}
+            </button>
+            {selected && (
+              <p className="start-summary">
+                {formatDuration(selected.duration, t)} · {formatDistance(selected.distance, locale)}
+              </p>
+            )}
+          </div>
+          {origin.kind !== 'current' && (
+            <p className="muted">{t('directions.startNeedsLocation')}</p>
+          )}
+        </div>
       )}
     </section>
   );

@@ -37,6 +37,10 @@ export interface Preferences {
   readonly routePreferences: RoutePreferences;
   readonly voiceGuidance: boolean;
   readonly fuel: FuelPreferences;
+  /** Interruptor dos reportes de polícia (ADR 0008): ligado enquanto o uso for pessoal. */
+  readonly policeReports: boolean;
+  /** Avisos de radares fixos (dados do OpenStreetMap). */
+  readonly speedCameras: boolean;
 }
 
 /**
@@ -80,6 +84,8 @@ const preferencesSchema: z.ZodType<Preferences> = z.object({
     })
     .catch(DEFAULT_ROUTE_PREFERENCES),
   voiceGuidance: z.boolean().catch(true),
+  policeReports: z.boolean().catch(true),
+  speedCameras: z.boolean().catch(true),
   fuel: z
     .object({
       carLitresPer100Km: litres,
@@ -102,6 +108,8 @@ export const DEFAULT_PREFERENCES: Preferences = {
   routePreferences: DEFAULT_ROUTE_PREFERENCES,
   voiceGuidance: true,
   fuel: DEFAULT_FUEL,
+  policeReports: true,
+  speedCameras: true,
 };
 
 export interface PreferencesStore {

@@ -124,6 +124,52 @@ export const en: Messages = {
       location_unavailable: 'Could not get your location. Try again.',
     },
   },
+  reports: {
+    report: 'Report',
+    reportHere: 'Report here',
+    title: "What's on the road?",
+    close: 'Close reports',
+    saved: '{{type}}: report saved on this device.',
+    types: {
+      police: 'Police',
+      accident: 'Accident',
+      hazard: 'Hazard on the road',
+      jam: 'Traffic jam',
+      roadworks: 'Roadworks',
+      closure: 'Road closed',
+      speed_camera: 'Speed camera',
+      average_speed_camera: 'Average speed camera',
+    },
+    reportedAt: 'Reported at {{time}}',
+    expiresAt: 'Disappears at {{time}}',
+    confirmations_one: 'Confirmed {{count}} time',
+    confirmations_other: 'Confirmed {{count}} times',
+    stillThere: 'Still there',
+    gone: 'Not there anymore',
+    confirmed: 'Thanks: the report will stay longer.',
+    removed: 'Report deleted.',
+    localOnly: 'Reports stay on this device only and disappear on their own.',
+    marker: '{{type}}, reported at {{time}}',
+  },
+  alerts: {
+    spoken: {
+      police: 'Police reported in {{distance}}.',
+      accident: 'Accident reported in {{distance}}.',
+      hazard: 'Hazard on the road in {{distance}}.',
+      jam: 'Traffic jam in {{distance}}.',
+      roadworks: 'Roadworks in {{distance}}.',
+      closure: 'Road closed in {{distance}}.',
+      speed_camera: 'Speed camera in {{distance}}.',
+      average_speed_camera: 'Average speed check in {{distance}}.',
+    },
+    spokenWithLimit: {
+      speed_camera: 'Speed camera in {{distance}}, limit {{limit}} kilometres per hour.',
+      average_speed_camera:
+        'Average speed check in {{distance}}, limit {{limit}} kilometres per hour.',
+    },
+    ahead: '{{type}} in {{distance}}',
+    limit: '{{limit}} km/h',
+  },
   weather: {
     title: 'Weather along the route',
     loading: 'Getting the forecast…',
@@ -186,6 +232,10 @@ export const en: Messages = {
     waitingGps: 'Waiting for GPS signal…',
     gpsDenied: 'No access to your location: allow it in the browser settings.',
     gpsError: 'No GPS signal.',
+    gpsWeak:
+      'Weak GPS signal (accuracy {{accuracy}}). Navigation starts when the signal improves: go somewhere open, away from buildings.',
+    gpsWeakUnknown:
+      'Weak GPS signal. Navigation starts when the signal improves: go somewhere open, away from buildings.',
     lanes: 'Lanes to use',
     lane: 'Lane {{n}}',
     laneRecommended: 'Lane {{n}} (recommended)',
@@ -242,6 +292,15 @@ export const en: Messages = {
     fuelPrice: 'Fuel price (€/L)',
     fuelHint:
       'Indicative values: adjust them to your vehicle and the current price. The estimate does not include tolls.',
+    reports: 'Reports',
+    police: 'Show and announce police reports',
+    policeHint:
+      'For personal use. Before sharing the app with other people, its legality must be confirmed.',
+    clearReports: 'Delete all reports',
+    speedCameras: 'Warn about fixed speed cameras',
+    speedCamerasHint:
+      'Locations from OpenStreetMap, updated once a month: some cameras may be missing or inactive. Radar detectors are forbidden (article 84 of the Portuguese Highway Code); check the law before sharing the app.',
+    confirmClearReports: 'Confirm: delete reports',
   },
   about: {
     text: 'Trajecto is a personal maps and navigation project for Portugal.',
@@ -253,6 +312,8 @@ export const en: Messages = {
     osm: 'Map data © OpenStreetMap contributors, available under the ODbL licence.',
     omt: 'Vector tiles in the © OpenMapTiles schema (CC-BY 4.0), served by OpenFreeMap.',
     photon: 'Search by Photon (komoot), using OpenStreetMap data.',
+    speedCameras:
+      'Speed cameras: data © OpenStreetMap contributors, available under the ODbL licence, extracted once a month.',
     openMeteo:
       'Weather forecast by Open-Meteo.com (CC BY 4.0), requested through the Trajecto server with route points rounded to ~100 m.',
     valhalla:

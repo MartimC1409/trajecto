@@ -4,6 +4,7 @@ import type {
   LngLat,
   PlacesStore,
   PreferencesStore,
+  ReportsStore,
   Router,
   WeatherProvider,
 } from '@trajecto/core';
@@ -13,6 +14,7 @@ import {
   createPhotonGeocoder,
   createPlacesStore,
   createPreferencesStore,
+  createReportsStore,
   createValhallaRouter,
   createWeatherProvider,
 } from '@trajecto/core';
@@ -30,6 +32,7 @@ export interface Services {
   /** API de geolocalização do browser (para seguir a posição durante a navegação). */
   readonly geolocation: Geolocation | undefined;
   readonly places: PlacesStore;
+  readonly reports: ReportsStore;
   readonly preferences: PreferencesStore;
   /** `false` quando o browser bloqueia o armazenamento e os dados só existem em memória. */
   readonly storagePersistent: boolean;
@@ -65,6 +68,7 @@ export function createServices(config: AppConfig, browserStorage: BrowserStorage
     locate: () => getCurrentLngLat(),
     geolocation: typeof navigator === 'undefined' ? undefined : navigator.geolocation,
     places: createPlacesStore({ storage }),
+    reports: createReportsStore({ storage }),
     preferences: createPreferencesStore(storage),
     storagePersistent: persistent,
   };

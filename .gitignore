@@ -6,6 +6,7 @@ dist/
 coverage/
 playwright-report/
 test-results/
+live-output/
 *.tsbuildinfo
 
 # Variáveis locais (nunca fazer commit de segredos)

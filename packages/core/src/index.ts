@@ -17,3 +17,6 @@ export * from './navigation';
 export * from './simulation';
 export * from './route-timing';
 export * from './weather';
+export * from './reports';
+export * from './route-alerts';
+export * from './speed-cameras';

@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "description": "Lógica de domínio do Trajecto (sem dependências do browser).",
+  "license": "MIT",
   "exports": {
     ".": "./src/index.ts",
     "./testing": "./src/testing/valhalla-fixtures.ts"

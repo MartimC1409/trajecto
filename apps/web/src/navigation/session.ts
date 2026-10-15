@@ -1,13 +1,24 @@
 import type {
+  AlertSource,
   LngLat,
   NavigationFix,
   NavigationSnapshot,
   Navigator,
   Route,
   RouteRequest,
+  RouteAlert,
   Router,
+  TravelMode,
 } from '@trajecto/core';
-import { createNavigator, createRouteSimulator, isAbortError } from '@trajecto/core';
+import {
+  alertsAlongRoute,
+  createNavigator,
+  createRouteSimulator,
+  isAbortError,
+  isValidLngLat,
+  nextAlert,
+  roundSpokenDistance,
+} from '@trajecto/core';
 
 /** O que é preciso para começar a navegar. */
 export interface NavigationTarget {
@@ -17,9 +28,15 @@ export interface NavigationTarget {
   /** Meio de transporte, preferências e língua usados para recalcular a rota. */
   readonly request: Pick<RouteRequest, 'mode' | 'preferences' | 'language'>;
   readonly simulate: boolean;
+  /** Reportes e radares a avisar durante a viagem (os que ficarem em cima da rota). */
+  readonly alerts?: readonly AlertSource[];
 }
 
-export type NavigationNotice = 'reroute_failed' | 'gps_denied' | 'gps_error' | null;
+/**
+ * Aviso a mostrar durante a navegação. `gps_weak`: as posições recebidas são demasiado imprecisas
+ * para seguir a rota (por exemplo, dentro de casa); a navegação continua quando o sinal melhorar.
+ */
+export type NavigationNotice = 'reroute_failed' | 'gps_denied' | 'gps_error' | 'gps_weak' | null;
 
 export interface NavigationState {
   readonly route: Route;
@@ -28,11 +45,20 @@ export interface NavigationState {
   readonly position: { readonly lngLat: LngLat; readonly bearing: number } | null;
   readonly rerouting: boolean;
   readonly notice: NavigationNotice;
+  /** Precisão da última posição do GPS (m), arredondada; `null` antes da primeira. */
+  readonly gpsAccuracy: number | null;
   readonly simulate: boolean;
   /** Multiplicador de velocidade da simulação. */
   readonly simulationSpeed: number;
   /** Instante da última atualização (para calcular a hora de chegada). */
   readonly updatedAt: number;
+  /** Próximo aviso na rota (reporte ou radar) até 2 km à frente. */
+  readonly nextAlert: {
+    readonly kind: string;
+    readonly distance: number;
+    /** Valor extra (por exemplo, o limite de um radar). */
+    readonly detail?: number;
+  } | null;
 }
 
 export interface NavigationSessionDeps {
@@ -42,6 +68,8 @@ export interface NavigationSessionDeps {
   readonly formatAlert: (meters: number, instruction: string) => string;
   /** Frase dita ao recalcular a rota (na língua atual). */
   readonly reroutingMessage: () => string;
+  /** Frase dita ao aproximar-se de um aviso, por exemplo "Polícia reportada daqui a 400 metros." */
+  readonly alertMessage?: (kind: string, meters: number, detail?: number) => string;
   readonly onChange: (state: NavigationState | null) => void;
   /** Intervalo entre posições simuladas (por omissão 1 s). */
   readonly simulationTickMs?: number;
@@ -61,6 +89,20 @@ const MIN_SPEED_FOR_HEADING = 2;
  * o uso justo do servidor público mesmo quando a rota nova volta a ser abandonada logo.
  */
 export const REROUTE_COOLDOWN_MS = 15_000;
+/** O próximo aviso aparece no ecrã a partir desta distância (m). */
+const ALERT_DISPLAY_DISTANCE = 2000;
+/**
+ * Erros de "tempo esgotado" do GPS logo depois de uma posição não contam como falta de sinal:
+ * parado, o telemóvel pode demorar a dar uma posição nova.
+ */
+const GPS_STALE_MS = 30_000;
+
+/** Distância (m) a que se diz o aviso em voz alta: ~25 s antes, conforme o meio de transporte. */
+export function alertSpeakDistance(mode: TravelMode, speed: number): number {
+  if (mode === 'walk') return 60;
+  if (mode === 'bike') return 150;
+  return Math.min(1500, Math.max(300, speed * 25));
+}
 
 export function createNavigationSession(deps: NavigationSessionDeps): NavigationSession {
   const tickMs = deps.simulationTickMs ?? 1000;
@@ -74,6 +116,9 @@ export function createNavigationSession(deps: NavigationSessionDeps): Navigation
   let generation = 0;
   let lastRerouteAt = -Infinity;
   let lastFix: NavigationFix | null = null;
+  let lastFixAt = -Infinity;
+  let routeAlerts: RouteAlert[] = [];
+  const announcedAlerts = new Set<string>();
 
   function emit(next: NavigationState | null) {
     state = next;
@@ -92,6 +137,7 @@ export function createNavigationSession(deps: NavigationSessionDeps): Navigation
   }
 
   function newNavigator(route: Route): Navigator {
+    routeAlerts = alertsAlongRoute(route, target?.alerts ?? []);
     return createNavigator(route, { formatAlert: deps.formatAlert });
   }
 
@@ -136,9 +182,54 @@ export function createNavigationSession(deps: NavigationSessionDeps): Navigation
   function onFix(fix: NavigationFix) {
     if (!navigator || !state) return;
     lastFix = fix;
+    lastFixAt = Date.now();
     const update = navigator.update(fix);
-    if (update.ignored) return;
+    const accuracy =
+      fix.accuracy !== null && fix.accuracy !== undefined && Number.isFinite(fix.accuracy)
+        ? Math.round(fix.accuracy)
+        : null;
+    if (update.ignored) {
+      // Posição demasiado imprecisa para seguir a rota: diz porquê em vez de ficar à espera em
+      // silêncio. Antes da primeira posição boa, mostra no mapa onde o GPS acha que estás.
+      if (isValidLngLat(fix.lngLat)) {
+        patch({
+          notice: state.notice === 'reroute_failed' ? state.notice : 'gps_weak',
+          gpsAccuracy: accuracy,
+          ...(state.snapshot === null
+            ? { position: { lngLat: fix.lngLat, bearing: state.position?.bearing ?? 0 } }
+            : {}),
+        });
+      }
+      return;
+    }
     const { snapshot } = update;
+    const texts = [...update.announcements];
+    let upcoming: NavigationState['nextAlert'] = null;
+    if (snapshot.status === 'navigating') {
+      const traveled = snapshot.distanceTraveled;
+      const shown = nextAlert(routeAlerts, traveled, ALERT_DISPLAY_DISTANCE);
+      if (shown) {
+        upcoming = {
+          kind: shown.kind,
+          distance: shown.progress - traveled,
+          ...(shown.detail !== undefined ? { detail: shown.detail } : {}),
+        };
+      }
+      const toSay = nextAlert(
+        routeAlerts,
+        traveled,
+        alertSpeakDistance(state.route.mode, snapshot.speed),
+      );
+      if (toSay && !announcedAlerts.has(toSay.id)) {
+        announcedAlerts.add(toSay.id);
+        const message = deps.alertMessage?.(
+          toSay.kind,
+          roundSpokenDistance(toSay.progress - traveled),
+          toSay.detail,
+        );
+        if (message) texts.push(message);
+      }
+    }
     const onRoute = snapshot.status !== 'off_route';
     const gpsBearing =
       fix.heading !== null &&
@@ -149,6 +240,8 @@ export function createNavigationSession(deps: NavigationSessionDeps): Navigation
         : snapshot.bearing;
     patch({
       snapshot,
+      nextAlert: upcoming,
+      gpsAccuracy: accuracy,
       updatedAt: Date.now(),
       position: onRoute
         ? { lngLat: snapshot.snapped, bearing: snapshot.bearing }
@@ -156,7 +249,7 @@ export function createNavigationSession(deps: NavigationSessionDeps): Navigation
       // O aviso de recálculo falhado mantém-se enquanto estiver fora da rota.
       notice: !onRoute && state.notice === 'reroute_failed' ? state.notice : null,
     });
-    if (update.announcements.length > 0) deps.speak(update.announcements);
+    if (texts.length > 0) deps.speak(texts);
     if (snapshot.status === 'arrived') {
       stopSources();
       return;
@@ -200,8 +293,10 @@ export function createNavigationSession(deps: NavigationSessionDeps): Navigation
           speed: position.coords.speed,
           timestamp: position.timestamp,
         }),
-      (error) =>
-        patch({ notice: error.code === error.PERMISSION_DENIED ? 'gps_denied' : 'gps_error' }),
+      (error) => {
+        if (error.code === error.TIMEOUT && Date.now() - lastFixAt < GPS_STALE_MS) return;
+        patch({ notice: error.code === error.PERMISSION_DENIED ? 'gps_denied' : 'gps_error' });
+      },
       { enableHighAccuracy: true, maximumAge: 1000, timeout: 15_000 },
     );
   }
@@ -224,6 +319,8 @@ export function createNavigationSession(deps: NavigationSessionDeps): Navigation
       waypoints = next.waypoints;
       lastRerouteAt = -Infinity;
       lastFix = null;
+      lastFixAt = -Infinity;
+      announcedAlerts.clear();
       navigator = newNavigator(next.route);
       emit({
         route: next.route,
@@ -231,9 +328,11 @@ export function createNavigationSession(deps: NavigationSessionDeps): Navigation
         position: null,
         rerouting: false,
         notice: null,
+        gpsAccuracy: null,
         simulate: next.simulate,
         simulationSpeed: 1,
         updatedAt: Date.now(),
+        nextAlert: null,
       });
       if (next.simulate) startSimulation(next.route);
       else startGps();

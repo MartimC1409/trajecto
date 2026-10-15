@@ -23,6 +23,7 @@ const config: AppConfig = {
   geocoderUrl: '/g',
   routerUrl: '/r',
   weatherUrl: '/w',
+  speedCamerasUrl: '/c',
   tileJsonUrl: 'x',
   glyphsUrl: 'y',
 };

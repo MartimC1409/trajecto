@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "description": "Aplicação web (PWA) do Trajecto.",
+  "license": "MIT",
   "scripts": {
     "dev": "vite",
     "dev:lan": "vite --host",

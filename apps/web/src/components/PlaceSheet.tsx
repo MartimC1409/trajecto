@@ -22,6 +22,7 @@ interface PlaceSheetProps {
   readonly onToggle: (kind: Favorite['kind']) => void;
   readonly onClose: () => void;
   readonly onDirections?: (place: Place) => void;
+  readonly onReport?: (place: Place) => void;
 }
 
 export function PlaceSheet({
@@ -31,6 +32,7 @@ export function PlaceSheet({
   onToggle,
   onClose,
   onDirections,
+  onReport,
 }: PlaceSheetProps) {
   const { t } = useTranslation();
   const titleId = useId();
@@ -81,6 +83,12 @@ export function PlaceSheet({
             <Icon name="directions" />
             {t('directions.open')}
           </button>
+          {onReport && (
+            <button type="button" className="button" onClick={() => onReport(selection.place)}>
+              <Icon name="report" />
+              {t('reports.reportHere')}
+            </button>
+          )}
         </div>
       )}
       {selection.status === 'ready' && (

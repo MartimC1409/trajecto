@@ -1,0 +1,52 @@
+name: Radares fixos (OpenStreetMap)
+
+# Uma consulta ao Overpass por mês (ou à mão), para gerar apps/web/public/data/speed-cameras.json.
+# As regras do servidor público pedem poucas consultas e um User-Agent próprio; por isso a app
+# nunca consulta o Overpass diretamente.
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 4 3 * *'
+  # Também quando o próprio script muda (para gerar os dados logo, sem esperar pelo mês seguinte).
+  push:
+    branches: ['claude/**']
+    paths:
+      - '.github/workflows/speed-cameras.yml'
+      - 'apps/web/scripts/fetch-speed-cameras.mjs'
+      - 'apps/web/scripts/speed-cameras-lib.mjs'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: speed-cameras
+  cancel-in-progress: false
+
+jobs:
+  update:
+    name: Atualizar radares
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+
+      - name: Descarregar radares do OpenStreetMap
+        run: node apps/web/scripts/fetch-speed-cameras.mjs
+
+      - name: Guardar no repositório se mudou
+        run: |
+          if git diff --quiet -- apps/web/public/data/speed-cameras.json; then
+            echo "Sem alterações."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add apps/web/public/data/speed-cameras.json
+          git commit -m "data: radares fixos do OpenStreetMap (ODbL)"
+          # O ramo pode ter avançado entretanto: junta-se por cima antes de enviar.
+          git pull --rebase origin "$GITHUB_REF_NAME"
+          git push origin "HEAD:$GITHUB_REF_NAME"

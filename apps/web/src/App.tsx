@@ -1,5 +1,19 @@
-import type { Favorite, LngLat, MapViewState, Place, Route, SearchBias } from '@trajecto/core';
-import { GeocoderError, coordinatePlace, isAbortError } from '@trajecto/core';
+import type {
+  Favorite,
+  LngLat,
+  MapViewState,
+  Place,
+  ReportType,
+  Route,
+  SearchBias,
+} from '@trajecto/core';
+import {
+  GeocoderError,
+  activeReports,
+  coordinatePlace,
+  isAbortError,
+  speedCameraAlerts,
+} from '@trajecto/core';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { DirectionsPanel } from './components/DirectionsPanel';
@@ -8,8 +22,12 @@ import { Menu } from './components/Menu';
 import { NavigationView } from './components/NavigationView';
 import type { Selection } from './components/PlaceSheet';
 import { PlaceSheet } from './components/PlaceSheet';
+import { ReportPicker } from './components/ReportPicker';
+import { ReportSheet } from './components/ReportSheet';
 import { SearchBox } from './components/SearchBox';
 import type { AppConfig } from './config';
+import { useNow } from './hooks/useNow';
+import { useSpeedCameras } from './hooks/useSpeedCameras';
 import { useResolvedTheme } from './hooks/useResolvedTheme';
 import { useStore } from './hooks/useStore';
 import { useWakeLock } from './hooks/useWakeLock';
@@ -24,7 +42,7 @@ const MENU_ID = 'app-menu';
 export function App({ config }: { config: AppConfig }) {
   const { t, i18n } = useTranslation();
   const services = useServices();
-  const { geocoder, places, preferences, storagePersistent } = services;
+  const { geocoder, places, preferences, reports, storagePersistent } = services;
   const prefs = useStore(preferences);
   const placesState = useStore(places);
   const theme = useResolvedTheme(prefs.theme);
@@ -33,6 +51,9 @@ export function App({ config }: { config: AppConfig }) {
   const [focus, setFocus] = useState<FocusRequest | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
+  // Mensagem curta no fundo do ecrã (por exemplo "Reporte guardado"), anunciada a leitores de ecrã.
+  const [toast, setToast] = useState<{ id: number; text: string } | null>(null);
+  const toastSeq = useRef(0);
   const mapApiRef = useRef<MapApi | null>(null);
   const reverseRef = useRef<AbortController | null>(null);
   const focusSeq = useRef(0);
@@ -61,6 +82,30 @@ export function App({ config }: { config: AppConfig }) {
   const navState = navigation.state;
   const [follow, setFollow] = useState(true);
   const wakeLockSupported = useWakeLock(navState !== null);
+
+  // Reportes ativos (os expirados desaparecem sozinhos; a polícia pode estar desligada).
+  const now = useNow();
+  const reportsState = useStore(reports);
+  const visibleReports = useMemo(
+    () => activeReports(reportsState.reports, now, { police: prefs.policeReports }),
+    [reportsState.reports, now, prefs.policeReports],
+  );
+  useEffect(() => {
+    reports.purgeExpired();
+  }, [reports, now]);
+  const [reportPicker, setReportPicker] = useState<
+    { lngLat: LngLat; bearing?: number } | 'navigation' | null
+  >(null);
+  const [openReportId, setOpenReportId] = useState<string | null>(null);
+  const speedCameras = useSpeedCameras(config.speedCamerasUrl, prefs.speedCameras);
+  const openReport = visibleReports.find((r) => r.id === openReportId) ?? null;
+
+  // A mensagem desaparece ao fim de 4 s.
+  useEffect(() => {
+    if (!toast) return;
+    const timer = setTimeout(() => setToast(null), 4000);
+    return () => clearTimeout(timer);
+  }, [toast]);
 
   useEffect(() => {
     if (i18n.language !== prefs.language) {
@@ -184,7 +229,35 @@ export function App({ config }: { config: AppConfig }) {
 
   function startNavigation(target: NavigationTarget) {
     setFollow(true);
-    navigation.start(target);
+    // Os reportes ativos são avisados quando ficarem à frente na rota.
+    const alerts = visibleReports.map((r) => ({
+      id: r.id,
+      kind: r.type,
+      lngLat: r.lngLat,
+      ...(r.bearing !== undefined ? { bearing: r.bearing } : {}),
+    }));
+    navigation.start({
+      ...target,
+      alerts: prefs.speedCameras ? [...alerts, ...speedCameraAlerts(speedCameras)] : alerts,
+    });
+  }
+
+  function showToast(text: string) {
+    toastSeq.current += 1;
+    setToast({ id: toastSeq.current, text });
+  }
+
+  function pickReport(type: ReportType) {
+    const where =
+      reportPicker === 'navigation'
+        ? navState?.position
+          ? { lngLat: navState.position.lngLat, bearing: navState.position.bearing }
+          : null
+        : reportPicker;
+    setReportPicker(null);
+    if (!where) return;
+    const report = reports.add(type, where.lngLat, where.bearing);
+    if (report) showToast(t('reports.saved', { type: t(`reports.types.${type}`) }));
   }
 
   const recent = useMemo(() => placesState.history.map((h) => h.place), [placesState.history]);
@@ -262,6 +335,15 @@ export function App({ config }: { config: AppConfig }) {
             if (!navigating) setRouteChoice({ routes: routeView.routes, index });
           }}
           onUserMove={() => setFollow(false)}
+          reports={visibleReports}
+          onReportClick={
+            navigating
+              ? undefined
+              : (report) => {
+                  setSelection(null);
+                  setOpenReportId(report.id);
+                }
+          }
         />
         {!directions && !navigating && (
           <button
@@ -279,13 +361,14 @@ export function App({ config }: { config: AppConfig }) {
         )}
       </main>
 
-      {selection && !directions && !navigating && (
+      {selection && !directions && !navigating && !openReport && (
         <PlaceSheet
           selection={selection}
           favorites={selectedFavorites}
           feedback={feedback}
           onToggle={toggleFavorite}
           onDirections={openDirections}
+          onReport={(place) => setReportPicker({ lngLat: place.lngLat })}
           onClose={() => {
             reverseRef.current?.abort();
             setSelection(null);
@@ -320,8 +403,38 @@ export function App({ config }: { config: AppConfig }) {
           onRecenter={() => setFollow(true)}
           onSetSpeed={navigation.setSimulationSpeed}
           onEnd={navigation.stop}
+          onReport={() => setReportPicker('navigation')}
         />
       )}
+
+      {openReport && !navigating && !reportPicker && (
+        <ReportSheet
+          report={openReport}
+          onConfirm={() => {
+            reports.confirm(openReport.id);
+            setOpenReportId(null);
+            showToast(t('reports.confirmed'));
+          }}
+          onRemove={() => {
+            reports.remove(openReport.id);
+            setOpenReportId(null);
+            showToast(t('reports.removed'));
+          }}
+          onClose={() => setOpenReportId(null)}
+        />
+      )}
+
+      {reportPicker && (
+        <ReportPicker
+          police={prefs.policeReports}
+          onPick={pickReport}
+          onClose={() => setReportPicker(null)}
+        />
+      )}
+
+      <p className="toast" role="status" aria-live="polite">
+        {toast && <span key={toast.id}>{toast.text}</span>}
+      </p>
 
       <Menu
         id={MENU_ID}
@@ -340,6 +453,7 @@ export function App({ config }: { config: AppConfig }) {
         onClearHistory={() => places.clearHistory()}
         onClearAll={() => {
           places.clearAll();
+          reports.clear();
           preferences.reset();
           setSelection(null);
         }}
@@ -348,6 +462,12 @@ export function App({ config }: { config: AppConfig }) {
         onSetHistoryEnabled={(enabled) => preferences.set('historyEnabled', enabled)}
         onSetVoiceGuidance={(enabled) => preferences.set('voiceGuidance', enabled)}
         onSetFuel={(fuel) => preferences.set('fuel', fuel)}
+        onSetPoliceReports={(enabled) => preferences.set('policeReports', enabled)}
+        onSetSpeedCameras={(enabled) => preferences.set('speedCameras', enabled)}
+        onClearReports={() => {
+          reports.clear();
+          showToast(t('reports.removed'));
+        }}
       />
     </div>
   );

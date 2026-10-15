@@ -24,6 +24,7 @@ const config: AppConfig = {
   geocoderUrl: '/g',
   routerUrl: '/r',
   weatherUrl: '/w',
+  speedCamerasUrl: '/c',
   tileJsonUrl: 'x',
   glyphsUrl: 'y',
 };
@@ -268,11 +269,20 @@ describe('Direções', () => {
   });
 
   it('simula a navegação e volta às direções ao terminar', async () => {
-    const { user } = setup();
+    const { user, services } = setup();
+    // Um reporte em cima da rota (~280 m da partida) é avisado durante a viagem.
+    const onRoute = ROUTES[0]?.geometry[1];
+    if (onRoute) services.reports.add('hazard', onRoute);
     const panel = await openDirections(user);
     await user.click(await within(panel).findByRole('button', { name: 'Simular' }, SLOW));
     const nav = screen.getByRole('region', { name: 'Navegação' });
     expect(within(nav).getByRole('heading', { name: 'Navegação' })).toHaveFocus();
+    expect(nav).toHaveTextContent('Perigo na via a 300 m');
+    // Reportar durante a viagem: fica na posição atual.
+    await user.click(within(nav).getByRole('button', { name: 'Reportar' }));
+    await user.click(screen.getByRole('button', { name: 'Acidente' }));
+    expect(within(nav).getByRole('button', { name: 'Reportar' })).toHaveFocus();
+    expect(services.reports.getSnapshot().reports[0]).toMatchObject({ type: 'accident' });
     expect(nav).toHaveTextContent('Vire à direita na Rua Alexandre Herculano.');
     expect(nav).toHaveTextContent('Simulação');
     expect(screen.queryByRole('search')).toBeNull();

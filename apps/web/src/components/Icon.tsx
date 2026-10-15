@@ -32,7 +32,15 @@ export type IconName =
   | 'snow'
   | 'fog'
   | 'storm'
-  | 'wind';
+  | 'wind'
+  | 'police'
+  | 'accident'
+  | 'hazard'
+  | 'jam'
+  | 'roadworks'
+  | 'closure'
+  | 'report'
+  | 'camera';
 
 // Ícones próprios, desenhados numa grelha de 24×24.
 export const ICON_PATHS: Record<IconName, string> = {
@@ -73,6 +81,17 @@ export const ICON_PATHS: Record<IconName, string> = {
   storm:
     '<path d="M7 14h10a4 4 0 0 0 .6-8 6 6 0 0 0-11.4 1.5A3.3 3.3 0 0 0 7 14z"/><path d="m12 14-2 4h4l-2 4"/>',
   wind: '<path d="M3 9h11a3 3 0 1 0-3-3M3 15h15a3 3 0 1 1-3 3M3 12h7"/>',
+  police:
+    '<path d="M12 3 5 6v5c0 4.5 3 8.5 7 10 4-1.5 7-5.5 7-10V6z"/><path d="m12 8 1.2 2.4 2.6.4-1.9 1.8.5 2.6L12 14l-2.4 1.2.5-2.6-1.9-1.8 2.6-.4z"/>',
+  accident:
+    '<path d="M3 17v-3l2-5h7l2 5v3z"/><path d="M4 17v2h3v-2M10 17v2h3v-2M19 4v7M19 15h.01"/>',
+  hazard: '<path d="M12 3 2 20h20z"/><path d="M12 9v5M12 17h.01"/>',
+  jam: '<path d="M2 16v-3l1.5-4h7l1.5 4v3zM12 16v-3l1.5-4h7l1.5 4v3z"/><path d="M3 16v2M11 16v2M13 16v2M21 16v2"/>',
+  roadworks: '<path d="M9.5 4h5L19 19H5z"/><path d="M7.5 12h9M3 20h18"/>',
+  closure: '<circle cx="12" cy="12" r="9"/><path d="M7 12h10"/>',
+  camera:
+    '<rect x="3" y="7" width="13" height="10" rx="2"/><path d="m16 11 5-3v8l-5-3M7 17v4M12 17v4"/>',
+  report: '<path d="M3 10v4l11 5V5z"/><path d="M7 13v5a2 2 0 0 0 4 0v-3M18 9v6M21 7v10"/>',
 };
 
 /** SVG completo, para usar fora do React (por exemplo, nos marcadores do mapa). */

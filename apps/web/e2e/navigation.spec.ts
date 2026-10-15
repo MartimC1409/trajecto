@@ -37,6 +37,9 @@ test.describe('Trajecto (Fases 2 e 3: rotas e navegação)', () => {
     await expect(routes.first()).toContainText('1,2 km');
     await expect(routes.first()).toContainText('Com portagens');
     await expect(routes.first()).toContainText('combustível');
+    // No telemóvel o painel é baixo: "Iniciar" tem de se ver sem deslizar o painel.
+    await expect(panel.getByRole('button', { name: 'Iniciar' })).toBeInViewport({ ratio: 1 });
+    await expect(panel.locator('.start-summary')).toHaveText('2 min · 1,2 km');
 
     expect(mocks.routeRequests).toHaveLength(1);
     expect(mocks.routeRequests[0]).toMatchObject({
@@ -139,5 +142,20 @@ test.describe('Trajecto (Fases 2 e 3: rotas e navegação)', () => {
     await expect(nav).toContainText('Chegaste ao destino.');
     await nav.getByRole('button', { name: 'Terminar' }).click();
     await expect(panel).toBeVisible();
+  });
+
+  test('com GPS impreciso (dentro de casa) explica a espera e arranca quando melhora', async ({
+    page,
+    context,
+  }) => {
+    await mockServices(page);
+    const panel = await openDirections(page);
+    await context.setGeolocation({ ...START, accuracy: 150 });
+    await panel.getByRole('button', { name: 'Iniciar' }).click();
+    const nav = page.getByRole('region', { name: 'Navegação' });
+    await expect(nav.getByRole('status')).toContainText('Sinal de GPS fraco (precisão de ±150 m)');
+    await context.setGeolocation({ ...START, accuracy: 10 });
+    await expect(nav.locator('.nav-distance')).toHaveText('550 m');
+    await expect(nav.getByRole('status')).not.toContainText('Sinal de GPS fraco');
   });
 });
