@@ -164,7 +164,8 @@ export const ptPT = {
     noData: 'sem previsão para esta hora',
     thresholdsHint:
       'Avisos do Trajecto com limiares próprios (não são avisos oficiais do IPMA). Hora estimada sem trânsito.',
-    attribution: 'Previsão do tempo: Open-Meteo.com (CC BY 4.0)',
+    attribution: 'Dados meteorológicos: Open-Meteo.com',
+    licence: 'Licença CC BY 4.0; dados amostrados ao longo da rota pelo Trajecto.',
   },
   nav: {
     label: 'Navegação',

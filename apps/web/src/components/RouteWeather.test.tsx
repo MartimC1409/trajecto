@@ -42,7 +42,11 @@ describe('RouteWeather', () => {
     const region = screen.getByRole('region', { name: 'Meteorologia na rota' });
     expect(region).toHaveTextContent('Chuva forte · por volta das 14:15, ao km 15');
     expect(region).toHaveTextContent('Rajadas de vento fortes');
-    expect(region).toHaveTextContent('Open-Meteo.com (CC BY 4.0)');
+    expect(region).toHaveTextContent('Dados meteorológicos: Open-Meteo.com');
+    expect(screen.getByRole('link', { name: /CC BY 4.0/u })).toHaveAttribute(
+      'href',
+      'https://creativecommons.org/licenses/by/4.0/',
+    );
     expect(region.querySelector('.weather-points')).not.toBeVisible();
     await userEvent.click(screen.getByRole('button', { name: 'Ver previsão ponto a ponto' }));
     expect(region).toHaveTextContent('Km 0 · 14:05');

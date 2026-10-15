@@ -42,8 +42,27 @@ para Portugal.
 
 ## Limitações e termos
 
-- **Open-Meteo:** ver "Termos verificados" abaixo. A atribuição "Open-Meteo.com (CC BY 4.0)"
-  aparece junto da previsão e no menu "Sobre".
+- **Open-Meteo (termos verificados a 2026-10-15 no código-fonte oficial do site e do servidor,
+  porque open-meteo.com não estava acessível deste ambiente):**
+  - uso gratuito só não comercial: uma app pessoal sem anúncios nem subscrições cabe nos
+    exemplos de uso não comercial dos termos;
+  - menos de 10 000 chamadas por dia, 5 000 por hora e 600 por minuto, contadas por IP; cada
+    ponto conta pelo menos 1 chamada (10 pontos por rota = 10 chamadas);
+  - sem chave de API (enviar uma chave redireciona para o serviço pago);
+  - dados sob CC BY 4.0: junto da previsão aparece "Dados meteorológicos: Open-Meteo.com" com
+    ligação, a ligação para a licença e a indicação de que os dados foram amostrados ao longo
+    da rota; também no menu "Sobre";
+  - endpoint `https://api.open-meteo.com/v1/forecast`, vários pontos separados por vírgulas
+    (a resposta passa a ser uma lista), `timeformat=unixtime` (segundos UTC, sem o problema da
+    mudança de hora a 25 de outubro), `forecast_days=7`.
+- **Risco de limite partilhado:** os limites contam por IP e o IP de saída das funções do Vercel
+  é dinâmico e pode ser partilhado com outros clientes (não confirmado). Se aparecerem erros
+  429, a alternativa é o browser pedir diretamente ao Open-Meteo (que aceita CORS), à custa de o
+  Open-Meteo passar a ver o IP do utilizador.
+- O código de tempo 96 nem sempre significa granizo (o servidor usa 96 para trovoada forte):
+  95, 96, 97 e 99 são todos tratados como "Trovoada".
+- A DWD deixa de fornecer visibilidade no modelo ICON depois de 30 de novembro de 2026; a
+  visibilidade é tratada como opcional (o aviso de nevoeiro também usa o código de tempo).
 - A hora de passagem é uma estimativa sem trânsito: num engarrafamento, a previsão usada pode
   ser a de uma hora antes da real.
 - Pontos a 15 km podem não apanhar fenómenos muito locais (trovoadas, nevoeiro em vales).

@@ -162,7 +162,8 @@ export const en: Messages = {
     noData: 'no forecast for this time',
     thresholdsHint:
       'Trajecto warnings with its own thresholds (not official IPMA warnings). Estimated time without traffic.',
-    attribution: 'Weather forecast: Open-Meteo.com (CC BY 4.0)',
+    attribution: 'Weather data by Open-Meteo.com',
+    licence: 'CC BY 4.0 licence; data sampled along the route by Trajecto.',
   },
   nav: {
     label: 'Navigation',

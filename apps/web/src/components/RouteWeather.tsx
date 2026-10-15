@@ -123,6 +123,13 @@ export function RouteWeather({ state }: { state: RouteWeatherState }) {
       <p className="muted">
         <a href="https://open-meteo.com/" target="_blank" rel="noopener noreferrer">
           {t('weather.attribution')}
+        </a>{' '}
+        <a
+          href="https://creativecommons.org/licenses/by/4.0/"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          {t('weather.licence')}
         </a>
       </p>
     </section>
