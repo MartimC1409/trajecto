@@ -15,3 +15,5 @@ export * from './valhalla';
 export * from './cost';
 export * from './navigation';
 export * from './simulation';
+export * from './route-timing';
+export * from './weather';

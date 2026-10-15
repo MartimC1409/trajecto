@@ -1,6 +1,7 @@
 export interface AppConfig {
   readonly geocoderUrl: string;
   readonly routerUrl: string;
+  readonly weatherUrl: string;
   readonly tileJsonUrl: string;
   readonly glyphsUrl: string;
 }
@@ -8,6 +9,7 @@ export interface AppConfig {
 export const config: AppConfig = {
   geocoderUrl: import.meta.env.VITE_GEOCODER_URL || '/geocoder',
   routerUrl: import.meta.env.VITE_ROUTER_URL || '/api/route',
+  weatherUrl: import.meta.env.VITE_WEATHER_URL || '/api/weather',
   tileJsonUrl: import.meta.env.VITE_MAP_TILEJSON_URL || 'https://tiles.openfreemap.org/planet',
   glyphsUrl:
     import.meta.env.VITE_MAP_GLYPHS_URL ||

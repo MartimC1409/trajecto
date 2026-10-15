@@ -731,6 +731,41 @@ a {
   gap: 2px;
 }
 
+/* Meteorologia na rota */
+.route-weather {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+.route-weather-title {
+  margin: 0 0 8px;
+  font-size: 1rem;
+}
+
+.route-weather p {
+  margin: 6px 0;
+}
+
+.weather-warnings,
+.weather-points {
+  margin: 8px 0;
+  padding: 0;
+  list-style: none;
+}
+
+.weather-warning,
+.weather-point {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: var(--tap);
+}
+
+.weather-warning {
+  font-weight: 600;
+}
+
 /* Setas das manobras e das faixas (rodadas com classes: a CSP não permite estilos inline). */
 .maneuver-icon {
   position: relative;

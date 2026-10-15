@@ -7,6 +7,7 @@ export interface MockState {
   readonly reverseRequests: URL[];
   /** Corpos JSON dos pedidos de rota (POST /api/route). */
   readonly routeRequests: Record<string, unknown>[];
+  readonly weatherRequests: URL[];
   readonly consoleErrors: string[];
 }
 
@@ -14,6 +15,7 @@ export interface MockState {
  * Substitui os serviços externos por respostas locais:
  * - pesquisa (proxy /geocoder → Photon);
  * - rotas (função /api/route → Valhalla);
+ * - meteorologia (função /api/weather → Open-Meteo);
  * - tiles do OpenFreeMap (TileJSON com tiles vazios).
  * Assim os testes são rápidos, repetíveis e não sobrecarregam serviços públicos.
  */
@@ -66,6 +68,7 @@ export async function mockServices(
     searchRequests: [],
     reverseRequests: [],
     routeRequests: [],
+    weatherRequests: [],
     consoleErrors: [],
   };
 
@@ -89,6 +92,32 @@ export async function mockServices(
   await page.route('**/api/route', async (route) => {
     state.routeRequests.push(route.request().postDataJSON() as Record<string, unknown>);
     await route.fulfill({ json: ROUTE_RESPONSE });
+  });
+  // Previsão no formato do Open-Meteo (um objeto por ponto), com chuva forte daqui a 1 hora.
+  await page.route('**/api/weather?**', async (route) => {
+    const url = new URL(route.request().url());
+    state.weatherRequests.push(url);
+    const count = (url.searchParams.get('lat') ?? '').split(',').length;
+    const start = Math.floor(Date.now() / 3_600_000) * 3600 - 3600;
+    const time = Array.from({ length: 6 }, (_, i) => start + i * 3600);
+    const location = {
+      latitude: 38.72,
+      longitude: -9.14,
+      hourly: {
+        time,
+        temperature_2m: [16, 16, 15, 15, 14, 14],
+        precipitation: [0, 0.2, 6.5, 3, 0, 0],
+        precipitation_probability: [10, 40, 95, 80, 20, 10],
+        weather_code: [2, 61, 65, 63, 3, 3],
+        wind_speed_10m: [10, 15, 30, 20, 10, 10],
+        wind_gusts_10m: [20, 30, 50, 40, 20, 20],
+        visibility: [20000, 15000, 4000, 8000, 20000, 20000],
+        is_day: [1, 1, 1, 1, 0, 0],
+      },
+    };
+    await route.fulfill({
+      json: count === 1 ? location : Array.from({ length: count }, () => location),
+    });
   });
   await page.route('https://tiles.openfreemap.org/planet', (route) =>
     route.fulfill({

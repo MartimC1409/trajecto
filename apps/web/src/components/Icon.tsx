@@ -25,7 +25,14 @@ export type IconName =
   | 'mute'
   | 'navigation'
   | 'play'
-  | 'list';
+  | 'list'
+  | 'sun'
+  | 'cloud'
+  | 'rain'
+  | 'snow'
+  | 'fog'
+  | 'storm'
+  | 'wind';
 
 // Ícones próprios, desenhados numa grelha de 24×24.
 export const ICON_PATHS: Record<IconName, string> = {
@@ -58,6 +65,14 @@ export const ICON_PATHS: Record<IconName, string> = {
   navigation: '<path d="M12 3 19 20l-7-4-7 4z"/>',
   play: '<path d="M7 4v16l13-8z"/>',
   list: '<path d="M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01"/>',
+  sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
+  cloud: '<path d="M7 18h10a4 4 0 0 0 .6-8 6 6 0 0 0-11.4 1.5A3.3 3.3 0 0 0 7 18z"/>',
+  rain: '<path d="M7 14h10a4 4 0 0 0 .6-8 6 6 0 0 0-11.4 1.5A3.3 3.3 0 0 0 7 14z"/><path d="m8 17-1 3M12 17l-1 3M16 17l-1 3"/>',
+  snow: '<path d="M7 14h10a4 4 0 0 0 .6-8 6 6 0 0 0-11.4 1.5A3.3 3.3 0 0 0 7 14z"/><path d="M8 18h.01M12 20h.01M16 18h.01M10 22h.01M14 22h.01"/>',
+  fog: '<path d="M4 9h16M6 13h12M4 17h16"/>',
+  storm:
+    '<path d="M7 14h10a4 4 0 0 0 .6-8 6 6 0 0 0-11.4 1.5A3.3 3.3 0 0 0 7 14z"/><path d="m12 14-2 4h4l-2 4"/>',
+  wind: '<path d="M3 9h11a3 3 0 1 0-3-3M3 15h15a3 3 0 1 1-3 3M3 12h7"/>',
 };
 
 /** SVG completo, para usar fora do React (por exemplo, nos marcadores do mapa). */

@@ -1,4 +1,4 @@
-import type { Route, Router } from '@trajecto/core';
+import type { HourlyForecast, Route, Router, WeatherProvider } from '@trajecto/core';
 import { RouterError, createMemoryStorage, parseValhallaResponse } from '@trajecto/core';
 import { valhallaResponse } from '@trajecto/core/testing';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
@@ -20,15 +20,43 @@ vi.mock('./map/MapView', () => ({
   },
 }));
 
-const config: AppConfig = { geocoderUrl: '/g', routerUrl: '/r', tileJsonUrl: 'x', glyphsUrl: 'y' };
+const config: AppConfig = {
+  geocoderUrl: '/g',
+  routerUrl: '/r',
+  weatherUrl: '/w',
+  tileJsonUrl: 'x',
+  glyphsUrl: 'y',
+};
 const HERE = { lng: -9.145, lat: 38.715 };
 const ROUTES: Route[] = parseValhallaResponse(valhallaResponse(1), 'car');
 const SLOW = { timeout: 4000 };
 
+/** Previsão com chuva forte a todas as horas, de 2 h antes a 6 h depois de agora. */
+function rainyForecast(): HourlyForecast {
+  const start = Math.floor(Date.now() / 3_600_000) * 3600 - 7200;
+  const times = Array.from({ length: 9 }, (_, i) => start + i * 3600);
+  const fill = (value: number) => times.map(() => value);
+  return {
+    times,
+    temperature: fill(15),
+    precipitation: fill(6),
+    precipitationProbability: fill(90),
+    weatherCode: fill(65),
+    windSpeed: fill(20),
+    windGusts: fill(30),
+    visibility: fill(10_000),
+    isDay: fill(1),
+  };
+}
+
 function setup(route: Router['route'] = async () => ROUTES, locate = async () => HERE) {
   const router = { route: vi.fn(route) };
+  const weather: WeatherProvider & { forecast: ReturnType<typeof vi.fn> } = {
+    forecast: vi.fn(async (points: readonly unknown[]) => points.map(() => rainyForecast())),
+  };
   const services = {
     ...createServices(config, { storage: createMemoryStorage(), persistent: true }),
+    weather,
     geocoder: fakeGeocoder(),
     router,
     locate: vi.fn(locate),
@@ -39,7 +67,7 @@ function setup(route: Router['route'] = async () => ROUTES, locate = async () =>
       <App config={config} />
     </ServicesProvider>,
   );
-  return { services, router, user: userEvent.setup() };
+  return { services, router, weather, user: userEvent.setup() };
 }
 
 async function openDirections(user: ReturnType<typeof userEvent.setup>) {
@@ -101,6 +129,12 @@ describe('Direções', () => {
     expect(within(panel).getByRole('list', { name: 'Passos da rota' })).toHaveTextContent(
       'Vire à direita na Rua Alexandre Herculano.',
     );
+
+    // Meteorologia na rota escolhida, à hora estimada de passagem.
+    const weatherRegion = await within(panel).findByRole('region', {
+      name: 'Meteorologia na rota',
+    });
+    expect(await within(weatherRegion).findByText(/Chuva forte · por volta das/u)).toBeVisible();
 
     // Tocar no mapa não abre a ficha de um local enquanto as direções estão abertas.
     mapProps.current?.onMapClick({ lng: -9, lat: 38 });
