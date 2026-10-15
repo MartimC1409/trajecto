@@ -6,6 +6,8 @@ export interface AppConfig {
   readonly speedCamerasUrl: string;
   readonly tileJsonUrl: string;
   readonly glyphsUrl: string;
+  /** Tiles de altitude (formato Terrarium) para o relevo do terreno. */
+  readonly reliefTilesUrl: string;
 }
 
 export const config: AppConfig = {
@@ -17,4 +19,6 @@ export const config: AppConfig = {
   glyphsUrl:
     import.meta.env.VITE_MAP_GLYPHS_URL ||
     'https://tiles.openfreemap.org/fonts/{fontstack}/{range}.pbf',
+  reliefTilesUrl:
+    import.meta.env.VITE_MAP_RELIEF_TILES_URL || 'https://tiles.mapterhorn.com/{z}/{x}/{y}.webp',
 };

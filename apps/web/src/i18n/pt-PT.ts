@@ -7,6 +7,8 @@ export const ptPT = {
       'Não foi possível guardar dados neste dispositivo. Os favoritos e o histórico perdem-se ao fechar a página.',
   },
   map: {
+    /** Antes do número da saída de uma autoestrada (com o espaço). */
+    exitPrefix: 'Saída ',
     label: 'Mapa interativo',
     loadError:
       'Não foi possível mostrar o mapa. O teu browser tem de suportar WebGL. Tenta atualizar o browser ou ativar a aceleração gráfica.',
@@ -47,6 +49,52 @@ export const ptPT = {
       unavailable: 'O serviço de pesquisa está indisponível. Tenta mais tarde.',
       bad_response: 'O serviço de pesquisa respondeu de forma inesperada.',
       network: 'Sem ligação à internet ou ao serviço de pesquisa.',
+    },
+  },
+  poi: {
+    /** Categorias dos locais do mapa (classes do OpenMapTiles e do Photon). */
+    categories: {
+      fuel: 'Bomba de gasolina',
+      charging_station: 'Posto de carregamento',
+      parking: 'Estacionamento',
+      hospital: 'Hospital',
+      pharmacy: 'Farmácia',
+      police: 'Polícia',
+      fire_station: 'Bombeiros',
+      restaurant: 'Restaurante',
+      fast_food: 'Comida rápida',
+      cafe: 'Café',
+      bar: 'Bar',
+      beer: 'Cervejaria',
+      grocery: 'Supermercado ou mercearia',
+      shop: 'Loja',
+      clothing_store: 'Loja de roupa',
+      lodging: 'Alojamento',
+      campsite: 'Parque de campismo',
+      bank: 'Banco',
+      atm: 'Multibanco',
+      post: 'Correios',
+      railway: 'Estação de comboios',
+      subway: 'Estação de metro',
+      bus: 'Paragem de autocarro',
+      ferry_terminal: 'Terminal de barcos',
+      harbor: 'Porto ou marina',
+      car: 'Automóveis',
+      bicycle_rental: 'Aluguer de bicicletas',
+      toll_booth: 'Portagem',
+      school: 'Escola',
+      college: 'Ensino superior',
+      library: 'Biblioteca',
+      town_hall: 'Câmara ou junta de freguesia',
+      museum: 'Museu',
+      place_of_worship: 'Local de culto',
+      attraction: 'Atração turística',
+      castle: 'Castelo',
+      park: 'Parque ou jardim',
+      toilets: 'Casas de banho',
+      information: 'Informação turística',
+      cinema: 'Cinema',
+      theatre: 'Teatro',
     },
   },
   place: {
@@ -301,6 +349,9 @@ export const ptPT = {
       'Para uso pessoal. Antes de partilhar a app com outras pessoas é preciso confirmar a legalidade.',
     clearReports: 'Apagar todos os reportes',
     speedCameras: 'Avisar radares fixos',
+    mapRelief: 'Relevo do terreno',
+    mapReliefHint:
+      'Sombreado das serras e vales, do serviço Mapterhorn. Esse serviço recebe o teu endereço IP e as zonas do mapa que vês (guarda-os até 30 dias, segundo a sua política de privacidade). Desliga para não fazer esses pedidos.',
     speedCamerasHint:
       'Localizações do OpenStreetMap, atualizadas uma vez por mês: podem faltar radares ou haver radares desativados. Os detetores de radar são proibidos (art. 84.º do Código da Estrada); confirma a lei antes de partilhar a app.',
     confirmClearReports: 'Confirmar: apagar reportes',
@@ -319,6 +370,8 @@ export const ptPT = {
       'Radares fixos: dados © contribuidores do OpenStreetMap, disponíveis sob a licença ODbL, extraídos uma vez por mês.',
     openMeteo:
       'Previsão do tempo por Open-Meteo.com (CC BY 4.0), pedida através do servidor do Trajecto com pontos da rota arredondados a ~100 m.',
+    relief:
+      'Relevo: Mapterhorn, com os Modelos Digitais do Terreno de Portugal continental © Direção-Geral do Território (DGT), CC BY 4.0, e "produced using Copernicus WorldDEM-30 © DLR e.V. 2010-2014 and © Airbus Defence and Space GmbH 2014-2018 provided under COPERNICUS by the European Union and ESA; all rights reserved".',
     valhalla:
       'Rotas por Valhalla (licença MIT), no servidor público da FOSSGIS (openstreetmap.de), com dados do OpenStreetMap. Sem garantia de disponibilidade.',
     fonts: 'Fontes Noto Sans (SIL Open Font License 1.1).',

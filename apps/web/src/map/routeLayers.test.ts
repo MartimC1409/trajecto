@@ -27,7 +27,7 @@ describe('routeLayers', () => {
     expect(routesBounds(routes)).toEqual([-9.1475, 38.715, -9.14, 38.722]);
   });
 
-  it('cria a fonte e as camadas por baixo dos nomes das ruas, uma só vez', () => {
+  it('cria a fonte e as camadas por baixo dos nomes das ruas (e por cima das setas), uma só vez', () => {
     const sources = new Map<string, unknown>();
     const map = {
       getSource: vi.fn((id: string) => sources.get(id)),
@@ -36,6 +36,7 @@ describe('routeLayers', () => {
       getStyle: () => ({
         layers: [
           { id: 'water', type: 'fill' },
+          { id: 'road-oneway', type: 'symbol' },
           { id: 'road-label', type: 'symbol' },
         ],
       }),

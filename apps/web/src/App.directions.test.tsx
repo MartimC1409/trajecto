@@ -26,6 +26,7 @@ const config: AppConfig = {
   weatherUrl: '/w',
   speedCamerasUrl: '/c',
   tileJsonUrl: 'x',
+  reliefTilesUrl: 'r',
   glyphsUrl: 'y',
 };
 const HERE = { lng: -9.145, lat: 38.715 };

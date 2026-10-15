@@ -8,6 +8,7 @@ import { apiPlugin } from './vite-api-plugin';
 const DEFAULT_GEOCODER_UPSTREAM = 'https://photon.komoot.io';
 const DEFAULT_TILEJSON_URL = 'https://tiles.openfreemap.org/planet';
 const DEFAULT_GLYPHS_URL = 'https://tiles.openfreemap.org/fonts/{fontstack}/{range}.pbf';
+const DEFAULT_RELIEF_TILES_URL = 'https://tiles.mapterhorn.com/{z}/{x}/{y}.webp';
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
@@ -15,6 +16,7 @@ export default defineConfig(({ mode }) => {
   const connectOrigins = [
     originOf(env.VITE_MAP_TILEJSON_URL || DEFAULT_TILEJSON_URL),
     originOf(env.VITE_MAP_GLYPHS_URL || DEFAULT_GLYPHS_URL),
+    originOf(env.VITE_MAP_RELIEF_TILES_URL || DEFAULT_RELIEF_TILES_URL),
   ];
 
   // O browser fala só com o nosso servidor local (/geocoder), que reencaminha para o Photon.

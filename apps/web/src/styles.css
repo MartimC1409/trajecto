@@ -369,6 +369,13 @@ a {
   color: var(--text-muted);
 }
 
+.sheet-category {
+  margin: 4px 0 0;
+  color: var(--accent);
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
 .sheet-coords {
   font-variant-numeric: tabular-nums;
   font-size: 0.875rem;

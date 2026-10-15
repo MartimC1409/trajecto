@@ -7,6 +7,7 @@ interface ImportMetaEnv {
   readonly VITE_MAP_TILEJSON_URL?: string;
   /** Modelo de URL das fontes do mapa. */
   readonly VITE_MAP_GLYPHS_URL?: string;
+  readonly VITE_MAP_RELIEF_TILES_URL?: string;
 }
 
 interface ImportMeta {

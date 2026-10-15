@@ -24,6 +24,7 @@ const config: AppConfig = {
   weatherUrl: '/w',
   speedCamerasUrl: '/c',
   tileJsonUrl: 'x',
+  reliefTilesUrl: 'r',
   glyphsUrl: 'y',
 };
 

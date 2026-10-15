@@ -34,6 +34,7 @@ interface MenuProps {
   readonly onSetFuel: (fuel: FuelPreferences) => void;
   readonly onSetPoliceReports: (enabled: boolean) => void;
   readonly onSetSpeedCameras: (enabled: boolean) => void;
+  readonly onSetMapRelief: (enabled: boolean) => void;
   readonly onClearReports: () => void;
 }
 
@@ -228,6 +229,20 @@ export function Menu(props: MenuProps) {
             </label>
           ))}
         </fieldset>
+        <div className="field">
+          <label className="checkbox">
+            <input
+              type="checkbox"
+              checked={props.preferences.mapRelief}
+              aria-describedby={`${titleId}-relief-hint`}
+              onChange={(event) => props.onSetMapRelief(event.target.checked)}
+            />
+            {t('settings.mapRelief')}
+          </label>
+          <p id={`${titleId}-relief-hint`} className="muted">
+            {t('settings.mapReliefHint')}
+          </p>
+        </div>
         {/* Botões de opção em vez de <select>: com duas línguas são mais claros e evitam uma
             violação da CSP que o WebKit (Safari) gera ao manipular elementos <select>. */}
         <fieldset className="field">
@@ -391,6 +406,11 @@ export function Menu(props: MenuProps) {
           <li>
             <a href="https://open-meteo.com/" target="_blank" rel="noopener noreferrer">
               {t('about.openMeteo')}
+            </a>
+          </li>
+          <li>
+            <a href="https://mapterhorn.com/attribution" target="_blank" rel="noopener noreferrer">
+              {t('about.relief')}
             </a>
           </li>
           <li>

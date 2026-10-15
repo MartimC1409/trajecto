@@ -1,5 +1,6 @@
 import type { BBox, Route } from '@trajecto/core';
 import type { Map as MapLibreMap } from 'maplibre-gl';
+import { ONEWAY_LAYER } from './mapStyle';
 
 export const ROUTE_SOURCE = 'trajecto-routes';
 export const ROUTE_HIT_LAYER = 'trajecto-routes-hit';
@@ -48,7 +49,10 @@ export function routesBounds(routes: readonly Route[]): BBox {
 export function addRouteLayers(map: MapLibreMap, data: RouteFeatures): void {
   if (map.getSource(ROUTE_SOURCE)) return;
   map.addSource(ROUTE_SOURCE, { type: 'geojson', data });
-  const beforeId = map.getStyle().layers.find((layer) => layer.type === 'symbol')?.id;
+  // Por baixo dos nomes, mas por cima das setas de sentido único (que não devem tapar a rota).
+  const beforeId = map
+    .getStyle()
+    .layers.find((layer) => layer.type === 'symbol' && layer.id !== ONEWAY_LAYER)?.id;
   const round = { 'line-join': 'round', 'line-cap': 'round' } as const;
   map.addLayer(
     {

@@ -41,6 +41,8 @@ export interface Preferences {
   readonly policeReports: boolean;
   /** Avisos de radares fixos (dados do OpenStreetMap). */
   readonly speedCameras: boolean;
+  /** Relevo do terreno no mapa (sombreado das montanhas). */
+  readonly mapRelief: boolean;
 }
 
 /**
@@ -86,6 +88,7 @@ const preferencesSchema: z.ZodType<Preferences> = z.object({
   voiceGuidance: z.boolean().catch(true),
   policeReports: z.boolean().catch(true),
   speedCameras: z.boolean().catch(true),
+  mapRelief: z.boolean().catch(true),
   fuel: z
     .object({
       carLitresPer100Km: litres,
@@ -110,6 +113,7 @@ export const DEFAULT_PREFERENCES: Preferences = {
   fuel: DEFAULT_FUEL,
   policeReports: true,
   speedCameras: true,
+  mapRelief: true,
 };
 
 export interface PreferencesStore {

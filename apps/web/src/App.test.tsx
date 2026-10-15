@@ -25,6 +25,7 @@ const config: AppConfig = {
   weatherUrl: '/w',
   speedCamerasUrl: '/c',
   tileJsonUrl: 'x',
+  reliefTilesUrl: 'r',
   glyphsUrl: 'y',
 };
 
@@ -112,6 +113,45 @@ describe('App', () => {
     resolveFirst(SE_LISBOA);
     await new Promise((r) => setTimeout(r, 20));
     expect(screen.queryByRole('heading', { name: 'Sé de Lisboa' })).toBeNull();
+  });
+
+  it('tocar num local do mapa mostra o nome e a categoria e depois a morada', async () => {
+    const { services } = setup();
+    const lngLat = { lng: -9.1335, lat: 38.7099 };
+    mapProps.current?.onPoiClick?.({ lngLat, name: 'Farmácia Central', category: 'pharmacy' });
+    const sheet = await screen.findByRole('region', { name: 'Farmácia Central' });
+    expect(within(sheet).getByText('Farmácia')).toBeVisible();
+    expect(services.geocoder.reverse).toHaveBeenCalledWith(lngLat, expect.anything());
+    // A morada vem da pesquisa inversa; o nome e a categoria do mapa mantêm-se.
+    expect(await within(sheet).findByText(/Largo da Sé/)).toBeVisible();
+    expect(within(sheet).getByRole('heading', { name: 'Farmácia Central' })).toBeVisible();
+  });
+
+  it('fechar o local antes da morada chegar não o volta a abrir', async () => {
+    const { user, services } = setup();
+    let resolve: (value: typeof SE_LISBOA) => void = () => undefined;
+    vi.mocked(services.geocoder.reverse).mockImplementationOnce(
+      () => new Promise((r) => (resolve = r)),
+    );
+    mapProps.current?.onPoiClick?.({
+      lngLat: { lng: -9.14, lat: 38.71 },
+      name: 'Estação do Rossio',
+      category: 'railway',
+    });
+    expect(await screen.findByText('Estação de comboios')).toBeVisible();
+    await user.click(screen.getByRole('button', { name: 'Fechar' }));
+    resolve(SE_LISBOA);
+    await new Promise((r) => setTimeout(r, 20));
+    expect(screen.queryByRole('heading', { name: 'Estação do Rossio' })).toBeNull();
+  });
+
+  it('o relevo do terreno está ligado e pode ser desligado no menu', async () => {
+    const { user, services } = setup();
+    expect(mapProps.current?.relief).toBe(true);
+    await user.click(screen.getByRole('button', { name: 'Abrir menu' }));
+    await user.click(screen.getByRole('checkbox', { name: 'Relevo do terreno' }));
+    expect(services.preferences.getSnapshot().mapRelief).toBe(false);
+    expect(mapProps.current?.relief).toBe(false);
   });
 
   it('"Que sítio é este?" usa o centro do mapa', async () => {

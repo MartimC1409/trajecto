@@ -3,7 +3,7 @@ import { formatLngLat } from '@trajecto/core';
 import { useId } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Icon } from './Icon';
-import { placeText } from './placeText';
+import { categoryLabel, placeText } from './placeText';
 
 export type Selection =
   | { readonly status: 'loading'; readonly lngLat: LngLat }
@@ -42,6 +42,7 @@ export function PlaceSheet({
       ? { title: t('place.loading'), subtitle: '', lngLat: selection.lngLat }
       : { ...placeText(selection.place, t), lngLat: selection.place.lngLat };
 
+  const category = selection.status === 'ready' ? categoryLabel(selection.place.category, t) : null;
   const has = (kind: Favorite['kind']) => favorites.some((f) => f.kind === kind);
 
   return (
@@ -59,6 +60,7 @@ export function PlaceSheet({
           <Icon name="close" />
         </button>
       </div>
+      {category && <p className="sheet-category">{category}</p>}
       {header.subtitle && <p className="sheet-subtitle">{header.subtitle}</p>}
       {selection.status === 'ready' && selection.noAddress && (
         <p className="sheet-note">{t('place.noAddress')}</p>

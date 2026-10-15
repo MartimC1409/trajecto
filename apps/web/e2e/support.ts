@@ -16,7 +16,7 @@ export interface MockState {
  * - pesquisa (proxy /geocoder → Photon);
  * - rotas (função /api/route → Valhalla);
  * - meteorologia (função /api/weather → Open-Meteo);
- * - tiles do OpenFreeMap (TileJSON com tiles vazios).
+ * - tiles do OpenFreeMap (TileJSON com tiles vazios) e do relevo (Mapterhorn).
  * Assim os testes são rápidos, repetíveis e não sobrecarregam serviços públicos.
  */
 /** Detalhes de uma violação da política de segurança de conteúdo, registados pelo browser. */
@@ -136,6 +136,8 @@ export async function mockServices(
   await page.route('https://tiles.openfreemap.org/fonts/**', (route) =>
     route.fulfill({ status: 204 }),
   );
+  // Relevo (Mapterhorn): sem pedidos reais nos testes.
+  await page.route('https://tiles.mapterhorn.com/**', (route) => route.fulfill({ status: 204 }));
   return state;
 }
 
