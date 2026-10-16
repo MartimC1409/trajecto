@@ -164,7 +164,7 @@ test.describe('Trajecto (Fase 7: sem rede)', () => {
       });
       await page.reload();
       // Registo para o CI: o tile escrito pela primeira página sobreviveu ao recarregar?
-      console.log(
+      console.warn(
         `WebKit, escrito antes de recarregar: ${JSON.stringify(await readStoredTile(page, '0/0/0'))}`,
       );
       await saveAreaDirectly(page);
