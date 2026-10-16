@@ -35,15 +35,12 @@ Decisões, política de uso, licenças e limites: [ADR 0015](../adr/0015-transpo
 | CSP em produção (`pnpm preview`) com transportes | Sem violações |
 | Serviço real (GitHub Actions, função do Vercel → Transitous) | Lisboa e Porto: HTTP 200, 5 ligações cada |
 
-## Publicação em produção (pendente)
+## Publicação em produção
 
-Em 2026-10-15 a ligação do Vercel desta sessão deixou de ter permissão para publicar
-(403 "You don't have permission to create a Production Deployment for this project"). O site
-de produção continua no commit `c0fe48b` (Fase 5, ainda sem o mapa detalhado nem os transportes)
-até ser publicada uma versão nova. Depois de publicar:
-
-1. em `.github/workflows/live-services.yml`, mudar `TRAJECTO_PRODUCTION_TRANSIT` para `'1'`;
-2. correr o workflow "Serviços reais", que passa a testar `/api/transit` no site publicado.
+Publicada em 2026-10-16 pela integração do Vercel com o GitHub, ao integrar o PR #5 no `main`
+(a publicação direta pela ligação do Vercel desta sessão foi recusada com 403). Confirmado no
+telemóvel: o separador "Transportes públicos" aparece no site publicado. O workflow "Serviços
+reais" passou a testar também `/api/transit` no site publicado (`TRAJECTO_PRODUCTION_TRANSIT`).
 
 ## Como testar no telemóvel
 
@@ -66,5 +63,5 @@ até ser publicada uma versão nova. Depois de publicar:
 - A cobertura e o tempo real dependem dos operadores; os horários podem estar incompletos.
 - O serviço é comunitário, sem garantia de disponibilidade, e tem limite de 20 pedidos por
   minuto por IP (o IP é o do servidor do Vercel).
-- A política do Transitous exige que o código esteja publicado: o repositório no GitHub tem de
-  ficar **público**.
+- A política do Transitous exige que o código esteja publicado: o repositório no GitHub é
+  público desde 2026-10-16, com licença MIT.

@@ -53,8 +53,9 @@ dessa versão.
 ## Política de uso do Transitous (verificada em 2026-10-15)
 
 - O projeto que usa a API tem de ter **código aberto publicado** (antes disso só são aceites
-  testes ligeiros de protótipo) e **não pode ser comercial**. O Trajecto tem licença MIT; o
-  repositório GitHub tem de estar **público** para cumprir esta condição.
+  testes ligeiros de protótipo) e **não pode ser comercial**. O Trajecto tem licença MIT e o
+  repositório [MartimC1409/trajecto](https://github.com/MartimC1409/trajecto) é público desde
+  2026-10-16.
 - **User-Agent** com o nome, a versão e um contacto. Pedidos com User-Agent genérico ou vazio são
   recusados (403).
 - **Ligação visível** para a lista de fontes e atribuição ao OpenStreetMap.
