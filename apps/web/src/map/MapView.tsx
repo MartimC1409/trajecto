@@ -25,6 +25,7 @@ import { iconSvg } from '../components/Icon';
 import type { AppConfig } from '../config';
 import type { MapResources } from '../offline/mapResources';
 import { MAP_GLYPHS_URL, MAP_PROTOCOL, MAP_TILEJSON_URL } from '../offline/mapResources';
+import { describeMapError } from './mapErrors';
 import { installMapImages } from './mapImages';
 import { MAP_ATTRIBUTION, POI_LAYERS, buildMapStyle } from './mapStyle';
 import type { MapStyleOptions, MapTheme } from './mapStyle';
@@ -329,7 +330,7 @@ export function MapView(props: MapViewProps) {
       });
     }
     map.on('moveend', () => onViewChange(readView(map)));
-    map.on('error', (event) => console.warn('[mapa]', event.error.message));
+    map.on('error', (event) => console.warn('[mapa]', describeMapError(event)));
 
     mapRef.current = map;
     onReady({ getView: () => readView(map), getBounds: () => readBounds(map) });

@@ -116,6 +116,8 @@ test.describe('Trajecto (Fase 7: sem rede)', () => {
     page.on('console', (message) => {
       if (message.type() === 'warning') warnings.push(message.text());
     });
+    const failedRequests: string[] = [];
+    page.on('requestfailed', (request) => failedRequests.push(request.url()));
 
     await page.goto('/');
     await expect(page.locator('canvas.maplibregl-canvas')).toBeVisible();
@@ -153,13 +155,17 @@ test.describe('Trajecto (Fase 7: sem rede)', () => {
     await page.unrouteAll({ behavior: 'ignoreErrors' });
     await context.setOffline(true);
     warnings.length = 0;
+    failedRequests.length = 0;
     await page.reload();
     await expect(page.getByRole('combobox', { name: 'Pesquisar moradas e locais' })).toBeVisible();
     await expect(page.getByText(/Sem rede: o mapa mostra só as zonas guardadas/u)).toBeVisible();
     await expect(page.locator('canvas.maplibregl-canvas')).toBeVisible();
     await page.waitForTimeout(1500);
     // Nenhum recurso do mapa falhou: TileJSON, tiles e tipos de letra vieram do dispositivo.
-    expect(warnings.filter((w) => w.includes('[mapa]'))).toEqual([]);
+    expect(
+      warnings.filter((w) => w.includes('[mapa]')),
+      `Pedidos falhados: ${JSON.stringify(failedRequests)}`,
+    ).toEqual([]);
     await page.getByRole('button', { name: 'Abrir menu' }).click();
     await expect(
       page.getByRole('region', { name: 'Mapas offline' }).getByRole('list'),
