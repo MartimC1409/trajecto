@@ -127,6 +127,19 @@ async function openMap(browser) {
   return { first, again };
 }
 
+/** Distância que falta (m), lida no ecrã de navegação ("12 min · 7,3 km"). */
+async function remainingMeters(page) {
+  // Ao chegar ao destino o resumo desaparece: sem ele, não há medida.
+  const text = await page
+    .locator('.nav-remaining')
+    .textContent({ timeout: 2000 })
+    .catch(() => '');
+  const match = /([\d.,\s\u00a0\u202f]+)(km|m)\s*$/u.exec((text ?? '').trim());
+  if (!match) return null;
+  const value = Number(match[1].replace(/[\s\u00a0\u202f]/gu, '').replace(',', '.'));
+  return match[2] === 'km' ? value * 1000 : value;
+}
+
 /** Guarda a zona visível pelo menu "Mapas offline" e devolve o resultado. */
 async function saveVisibleZone(page) {
   await page.getByRole('button', { name: 'Abrir menu' }).click();
@@ -175,20 +188,26 @@ async function navigation(browser, relief, { savedZone = false } = {}) {
     { timeout: 30_000 },
   );
   await simulate.click();
-  await page
-    .getByRole('button', { name: `Velocidade da simulação: ${SIMULATION_FACTOR}×` })
-    .click();
+  const speed = `Velocidade da simulação: ${String(SIMULATION_FACTOR)}×`;
+  await page.getByRole('button', { name: speed }).click();
+  await page.getByRole('button', { name: speed, pressed: true }).waitFor();
   network.reset();
   const before = await network.taskSeconds();
+  const startMeters = await remainingMeters(page);
   const started = Date.now();
   await page.waitForTimeout(SIMULATION_S * 1000);
   const elapsed = (Date.now() - started) / 1000;
   const after = await network.taskSeconds();
+  const arrived = await page.getByText('Chegaste ao destino.').isVisible();
+  const endMeters = arrived ? 0 : await remainingMeters(page);
   const result = {
     relief,
     savedZone: zone ?? null,
     elapsedSeconds: Math.round(elapsed),
     drivingMinutes: (elapsed * SIMULATION_FACTOR) / 60,
+    arrived,
+    travelledKm:
+      startMeters !== null && endMeters !== null ? (startMeters - endMeters) / 1000 : null,
     mainThreadBusy: (after - before) / elapsed,
     ...network.snapshot(),
   };
@@ -259,8 +278,10 @@ for (const key of ['navigationWithRelief', 'navigationWithoutRelief', 'navigatio
   const zone = nav.savedZone
     ? `, zona da rota guardada antes (${String(nav.savedZone.tiles)} tiles, ${mb(nav.savedZone.storedBytes)}; ${nav.savedZone.estimate ?? ''})`
     : '';
+  const perKm = nav.travelledKm ? ` (${mb(sum(nav.bytes) / nav.travelledKm)} por km)` : '';
+  const km = nav.travelledKm === null ? '' : `, ${nav.travelledKm.toFixed(1)} km`;
   lines.push(
-    `- Navegação simulada ${nav.relief ? 'com' : 'sem'} relevo${zone} (${nav.drivingMinutes.toFixed(1)} min de condução): ${mb(sum(nav.bytes))}, ≈ ${mb(perHour)} por hora; processador ocupado na página ${(nav.mainThreadBusy * 100).toFixed(0)} % (${JSON.stringify(nav.bytes)}).`,
+    `- Navegação simulada ${nav.relief ? 'com' : 'sem'} relevo${zone} (${nav.drivingMinutes.toFixed(1)} min de condução${km}): ${mb(sum(nav.bytes))}, ≈ ${mb(perHour)} por hora${perKm}; processador ocupado na página ${(nav.mainThreadBusy * 100).toFixed(0)} % (${JSON.stringify(nav.bytes)}; pedidos ${JSON.stringify(nav.requests)}).`,
   );
 }
 if (report.offlineArea) {
