@@ -35,6 +35,15 @@ Decisões, política de uso, licenças e limites: [ADR 0015](../adr/0015-transpo
 | CSP em produção (`pnpm preview`) com transportes | Sem violações |
 | Serviço real (GitHub Actions, função do Vercel → Transitous) | Lisboa e Porto: HTTP 200, 5 ligações cada |
 
+## Publicação em produção (pendente)
+
+Em 2026-10-15 a ligação do Vercel desta sessão deixou de ter permissão para publicar
+(403 "You don't have permission to create a Production Deployment for this project"). O site
+de produção continua com a versão anterior (Fase 5) até a Fase 6 ser publicada. Depois de publicar:
+
+1. em `.github/workflows/live-services.yml`, mudar `TRAJECTO_PRODUCTION_TRANSIT` para `'1'`;
+2. correr o workflow "Serviços reais", que passa a testar `/api/transit` no site publicado.
+
 ## Como testar no telemóvel
 
 1. Abre o site e pesquisa um destino em Lisboa ou no Porto (por exemplo "Estação do Oriente").

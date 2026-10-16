@@ -1,7 +1,8 @@
 // @vitest-environment node
 /**
- * Testes contra os serviços reais (Valhalla da FOSSGIS e Open-Meteo), pelo mesmo caminho da app:
- * cliente do `core` → função do servidor (api/route.ts, api/weather.ts) → serviço externo.
+ * Testes contra os serviços reais (Valhalla da FOSSGIS, Open-Meteo e Transitous), pelo mesmo
+ * caminho da app: cliente do `core` → função do servidor (api/route.ts, api/weather.ts,
+ * api/transit.ts) → serviço externo.
  *
  * Não correm com `pnpm test`: só com TRAJECTO_LIVE=1 (workflow "Serviços reais" no GitHub
  * Actions). Fazem poucos pedidos, com pausas, para respeitar o uso justo dos serviços públicos.
@@ -25,6 +26,8 @@ import { handleWeatherRequest } from '../../api/weather';
 const LIVE = process.env.TRAJECTO_LIVE === '1';
 /** Endereço público de produção (por exemplo https://trajecto-psi.vercel.app), para testar o site real. */
 const PRODUCTION = process.env.TRAJECTO_PRODUCTION_URL ?? '';
+/** A função /api/transit já está publicada em produção (ver live-services.yml). */
+const PRODUCTION_TRANSIT = process.env.TRAJECTO_PRODUCTION_TRANSIT === '1';
 const OUTPUT = new URL('../../live-output/', import.meta.url);
 
 const LISBOA: LngLat = { lng: -9.1393, lat: 38.7223 };
@@ -144,6 +147,11 @@ describe.skipIf(!LIVE)('serviços reais', () => {
         `transportes ${name}: HTTP ${String(last.status)}, ${String(itineraries.length)} opção(ões);`,
         first?.legs.map((l) => `${l.mode}${l.line ? ` ${l.line}` : ''}`).join(' → '),
       );
+      // Nomes que o serviço dá à partida e à chegada (a app mostra os seus próprios nomes).
+      const raw = last.body as { from?: { name?: unknown }; to?: { name?: unknown } };
+      console.warn(
+        `transportes ${name}: nomes ${String(raw.from?.name)} → ${String(raw.to?.name)}`,
+      );
       expect(itineraries.length).toBeGreaterThan(0);
       expect(parseTransitResponse(last.body).length).toBe(itineraries.length);
       expect(itineraries.some((it) => it.legs.some((l) => l.kind !== 'walk'))).toBe(true);
@@ -209,4 +217,18 @@ describe.skipIf(!LIVE || !PRODUCTION)('produção', () => {
     const forecasts = await weather.forecast([LISBOA, PORTO]);
     expect(forecasts).toHaveLength(2);
   }, 60_000);
+
+  it.skipIf(!PRODUCTION_TRANSIT)(
+    'transportes públicos através da função do Vercel (Transitous)',
+    async () => {
+      const transit = createTransitPlanner({ url: at('/api/transit').href });
+      const itineraries = await transit.plan({ from: LISBOA, to: BAIXA });
+      console.warn(
+        `produção transportes: ${String(itineraries.length)} opção(ões);`,
+        itineraries[0]?.legs.map((l) => `${l.mode}${l.line ? ` ${l.line}` : ''}`).join(' → '),
+      );
+      expect(itineraries.length).toBeGreaterThan(0);
+    },
+    60_000,
+  );
 });
