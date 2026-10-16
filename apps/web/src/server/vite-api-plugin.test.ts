@@ -80,6 +80,21 @@ describe('apiPlugin', () => {
     expect(upstream.searchParams.get('latitude')).toBe('38.7,38.8');
   });
 
+  it('serve /api/transit com a query string original', async () => {
+    const fetchMock = vi.fn<typeof fetch>(
+      async () =>
+        new Response('{"itineraries":[]}', { headers: { 'Content-Type': 'application/json' } }),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+    const { res, done } = response();
+    const req = request('GET', '');
+    Object.assign(req, { url: '/?fromPlace=38.7,-9.1&toPlace=38.8,-9.2' });
+    mount(apiPlugin(), 'configurePreviewServer', '/api/transit')(req, res);
+    expect(await done).toBe('{"itineraries":[]}');
+    const upstream = new URL(String(fetchMock.mock.calls[0]?.[0]));
+    expect(upstream.searchParams.get('toPlace')).toBe('38.8,-9.2');
+  });
+
   it('recusa corpos grandes e outros métodos, e trata erros internos', async () => {
     const handler = mount(apiPlugin(), 'configureServer');
     const big = response();

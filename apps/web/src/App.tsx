@@ -6,6 +6,7 @@ import type {
   ReportType,
   Route,
   SearchBias,
+  TransitItinerary,
 } from '@trajecto/core';
 import {
   GeocoderError,
@@ -31,7 +32,7 @@ import { useSpeedCameras } from './hooks/useSpeedCameras';
 import { useResolvedTheme } from './hooks/useResolvedTheme';
 import { useStore } from './hooks/useStore';
 import { useWakeLock } from './hooks/useWakeLock';
-import type { FocusRequest, MapApi, RouteMarker } from './map/MapView';
+import type { FocusRequest, MapApi, MapPoi, RouteMarker } from './map/MapView';
 import { MapView } from './map/MapView';
 import type { NavigationTarget } from './navigation/session';
 import { useNavigation } from './navigation/useNavigation';
@@ -75,6 +76,8 @@ export function App({ config }: { config: AppConfig }) {
   } | null>(null);
   const selectedRoute =
     routeChoice && routeChoice.routes === routeView.routes ? routeChoice.index : 0;
+  // Itinerário de transportes públicos escolhido no painel de direções.
+  const [transitView, setTransitView] = useState<TransitItinerary | null>(null);
 
   const navigation = useNavigation(services, prefs.voiceGuidance, (enabled) =>
     preferences.set('voiceGuidance', enabled),
@@ -171,6 +174,35 @@ export function App({ config }: { config: AppConfig }) {
     [geocoder],
   );
 
+  // Tocar num local do mapa: nome e categoria já, a morada a seguir (pesquisa inversa).
+  const showPoi = useCallback(
+    (poi: MapPoi) => {
+      reverseRef.current?.abort();
+      const controller = new AbortController();
+      reverseRef.current = controller;
+      setFeedback(null);
+      const point = coordinatePlace(poi.lngLat);
+      const place: Place = {
+        ...point,
+        id: `poi:${poi.category}:${point.id.slice('coord:'.length)}`.slice(0, 200),
+        name: poi.name,
+        kind: 'other',
+        category: `poi:${poi.category}`,
+      };
+      setSelection({ status: 'ready', place });
+      geocoder
+        .reverse(poi.lngLat, { signal: controller.signal })
+        .then((found) => {
+          if (controller.signal.aborted || !found) return;
+          setSelection({ status: 'ready', place: { ...place, address: found.address } });
+        })
+        .catch(() => {
+          // Sem morada: o local continua a mostrar o nome e a categoria.
+        });
+    },
+    [geocoder],
+  );
+
   const selectedPlace = selection?.status === 'ready' ? selection.place : null;
   const selectedFavorites = useMemo(
     () =>
@@ -225,6 +257,7 @@ export function App({ config }: { config: AppConfig }) {
   function closeDirections() {
     setDirections(null);
     setRouteView({ routes: [], markers: [] });
+    setTransitView(null);
   }
 
   function startNavigation(target: NavigationTarget) {
@@ -314,11 +347,13 @@ export function App({ config }: { config: AppConfig }) {
         <MapView
           config={config}
           theme={theme}
+          relief={prefs.mapRelief}
           initialView={initialView}
           selected={directions || navigating ? null : selectedLngLat}
           focus={focus}
           favorites={placesState.favorites}
           onMapClick={directions || navigating ? ignoreClick : reverseAt}
+          onPoiClick={directions || navigating ? undefined : showPoi}
           onFavoriteClick={(favorite) => {
             if (!directions && !navigating) showPlace(favorite.place, { record: false });
           }}
@@ -330,6 +365,7 @@ export function App({ config }: { config: AppConfig }) {
           navigation={
             navState ? { position: navState.position, follow, mode: navState.route.mode } : null
           }
+          transit={navigating ? null : transitView}
           onRouteClick={(index) => {
             // Durante a navegação, tocar na rota não muda a rota escolhida no painel escondido.
             if (!navigating) setRouteChoice({ routes: routeView.routes, index });
@@ -340,6 +376,7 @@ export function App({ config }: { config: AppConfig }) {
             navigating
               ? undefined
               : (report) => {
+                  reverseRef.current?.abort();
                   setSelection(null);
                   setOpenReportId(report.id);
                 }
@@ -387,6 +424,7 @@ export function App({ config }: { config: AppConfig }) {
           getBias={getBias}
           onSelectRoute={(index) => setRouteChoice({ routes: routeView.routes, index })}
           onRoutesChange={onRoutesChange}
+          onTransitChange={setTransitView}
           onStart={startNavigation}
           onClose={closeDirections}
         />
@@ -455,6 +493,7 @@ export function App({ config }: { config: AppConfig }) {
           places.clearAll();
           reports.clear();
           preferences.reset();
+          reverseRef.current?.abort();
           setSelection(null);
         }}
         onSetTheme={(value) => preferences.set('theme', value)}
@@ -464,6 +503,7 @@ export function App({ config }: { config: AppConfig }) {
         onSetFuel={(fuel) => preferences.set('fuel', fuel)}
         onSetPoliceReports={(enabled) => preferences.set('policeReports', enabled)}
         onSetSpeedCameras={(enabled) => preferences.set('speedCameras', enabled)}
+        onSetMapRelief={(enabled) => preferences.set('mapRelief', enabled)}
         onClearReports={() => {
           reports.clear();
           showToast(t('reports.removed'));

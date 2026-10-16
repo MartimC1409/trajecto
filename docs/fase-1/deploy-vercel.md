@@ -33,9 +33,11 @@ O Vercel publica em produção o ramo `main`. Enquanto o trabalho estiver noutro
 ## 3. Abrir no iPhone
 
 1. No Safari, abre o URL de produção que o Vercel mostra (algo como `https://trajecto-xxxx.vercel.app`).
-   - O acesso depende da proteção do projeto (Settings → Deployment Protection → Vercel Authentication):
-     - "Standard Protection": o URL de produção é público e só as pré-visualizações pedem login no Vercel;
-     - "All Deployments" (opção `all_except_custom_domains`, a que a equipa `martim` tem): todos os URLs `*.vercel.app` pedem login, incluindo o de produção.
+   - O acesso depende da proteção do projeto (Settings → Deployment Protection → Vercel Authentication).
+     Desde 2026-10-15 o projeto usa a opção `prod_deployment_urls_and_all_previews`: o URL de
+     produção (`https://trajecto-psi.vercel.app`) é **público**; as pré-visualizações e os URLs
+     próprios de cada publicação (`trajecto-xxxx-martim2.vercel.app`) continuam a pedir login.
+     Com a opção `all_except_custom_domains` até o URL de produção pedia login.
 2. Para instalar: botão Partilhar → **Adicionar ao ecrã principal**.
    - Usa um URL que não peça login. A app instalada não partilha o login do Safari, por isso mostraria o ecrã de login do Vercel.
 3. Com HTTPS, o botão **Mostrar a minha localização** passa a funcionar. O Safari pede autorização na primeira vez.

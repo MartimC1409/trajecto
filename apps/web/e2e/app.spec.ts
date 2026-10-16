@@ -23,6 +23,23 @@ test.describe('Trajecto (Fase 1)', () => {
     expect(mocks.consoleErrors.filter(isCspViolation)).toEqual([]);
   });
 
+  test('o botão "Que sítio é este?" não tapa as atribuições do mapa', async ({ page }) => {
+    await mockServices(page);
+    await page.goto('/');
+    const attribution = page.locator('.maplibregl-ctrl-attrib');
+    await expect(attribution).toBeVisible();
+    const button = await page.getByRole('button', { name: /Que sítio é este/ }).boundingBox();
+    const box = await attribution.boundingBox();
+    expect(button && box).toBeTruthy();
+    if (!button || !box) return;
+    const overlaps =
+      button.x < box.x + box.width &&
+      box.x < button.x + button.width &&
+      button.y < box.y + box.height &&
+      box.y < button.y + button.height;
+    expect(overlaps).toBe(false);
+  });
+
   test('pesquisa, guarda como Casa e o favorito sobrevive a recarregar', async ({ page }) => {
     const mocks = await mockServices(page);
     await page.goto('/');

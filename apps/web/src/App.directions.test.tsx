@@ -24,8 +24,10 @@ const config: AppConfig = {
   geocoderUrl: '/g',
   routerUrl: '/r',
   weatherUrl: '/w',
+  transitUrl: '/t',
   speedCamerasUrl: '/c',
   tileJsonUrl: 'x',
+  reliefTilesUrl: 'r',
   glyphsUrl: 'y',
 };
 const HERE = { lng: -9.145, lat: 38.715 };

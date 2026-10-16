@@ -9,6 +9,7 @@ describe('cabeçalhos de segurança', () => {
       connectOrigins: [
         originOf('https://tiles.openfreemap.org/planet'),
         originOf('https://tiles.openfreemap.org/fonts/{fontstack}/{range}.pbf'),
+        originOf('https://tiles.mapterhorn.com/{z}/{x}/{y}.webp'),
       ],
     });
     const global = vercelConfig.headers.find((h) => h.source === '/(.*)');

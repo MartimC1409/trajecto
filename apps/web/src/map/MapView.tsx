@@ -6,6 +6,7 @@ import type {
   MapViewState,
   Report,
   Route,
+  TransitItinerary,
   TravelMode,
 } from '@trajecto/core';
 import type { GeoJSONSource } from 'maplibre-gl';
@@ -21,8 +22,9 @@ import { useEffect, useEffectEvent, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { iconSvg } from '../components/Icon';
 import type { AppConfig } from '../config';
-import { MAP_ATTRIBUTION, buildMapStyle } from './mapStyle';
-import type { MapTheme } from './mapStyle';
+import { installMapImages } from './mapImages';
+import { MAP_ATTRIBUTION, POI_LAYERS, buildMapStyle } from './mapStyle';
+import type { MapStyleOptions, MapTheme } from './mapStyle';
 import {
   ROUTE_HIT_LAYER,
   ROUTE_SOURCE,
@@ -30,6 +32,7 @@ import {
   routesBounds,
   routesToGeoJson,
 } from './routeLayers';
+import { TRANSIT_SOURCE, addTransitLayers, transitToGeoJson } from './transitLayers';
 
 export interface MapApi {
   getView(): MapViewState;
@@ -49,6 +52,14 @@ export interface RouteMarker {
   readonly label: string;
 }
 
+/** Local do mapa (camada de locais do OpenStreetMap) em que se tocou. */
+export interface MapPoi {
+  readonly lngLat: LngLat;
+  readonly name: string;
+  /** Categoria, por exemplo "pharmacy", "subway" ou "charging_station". */
+  readonly category: string;
+}
+
 /** Estado da navegação que o mapa precisa de mostrar. */
 export interface MapNavigation {
   readonly position: { readonly lngLat: LngLat; readonly bearing: number } | null;
@@ -59,11 +70,15 @@ export interface MapNavigation {
 export interface MapViewProps {
   readonly config: AppConfig;
   readonly theme: MapTheme;
+  /** Mostrar o relevo do terreno (pede tiles de altitude a outro serviço). */
+  readonly relief?: boolean;
   readonly initialView: MapViewState;
   readonly selected: LngLat | null;
   readonly focus: FocusRequest | null;
   readonly favorites: readonly Favorite[];
   readonly onMapClick: (lngLat: LngLat) => void;
+  /** Tocar num local com ícone (sem esta função, conta como um toque no mapa). */
+  readonly onPoiClick?: (poi: MapPoi) => void;
   readonly onFavoriteClick: (favorite: Favorite) => void;
   readonly onViewChange: (view: MapViewState) => void;
   readonly onReady: (api: MapApi | null) => void;
@@ -72,6 +87,8 @@ export interface MapViewProps {
   readonly routeMarkers?: readonly RouteMarker[];
   readonly navigation?: MapNavigation | null;
   readonly onRouteClick?: (index: number) => void;
+  /** Itinerário de transportes públicos escolhido (troços coloridos por linha). */
+  readonly transit?: TransitItinerary | null;
   /** O utilizador moveu o mapa à mão durante a navegação (deixa de o seguir). */
   readonly onUserMove?: () => void;
   /** Reportes ativos a mostrar no mapa. */
@@ -111,11 +128,60 @@ function replaceGeolocate(
 
 const FLAT_CAMERA = { pitch: 0, bearing: 0, padding: { top: 0, bottom: 0, left: 0, right: 0 } };
 
+/**
+ * Mostra um retângulo com o mapa plano e virado a norte, sem ficar por baixo do painel.
+ * Um único movimento de câmara: outro movimento logo a seguir cancelaria este.
+ */
+function showBounds(map: MapLibreMap, [west, south, east, north]: BBox, duration: number): void {
+  map.jumpTo(FLAT_CAMERA);
+  const container = map.getContainer();
+  const wide = container.clientWidth >= 768;
+  map.fitBounds(
+    [
+      [west, south],
+      [east, north],
+    ],
+    {
+      padding: wide
+        ? { top: 90, bottom: 60, left: 420, right: 70 }
+        : // No telemóvel o painel ocupa até 62% da altura (styles.css, .sheet.directions).
+          { top: 90, bottom: Math.round(container.clientHeight * 0.62) + 16, left: 40, right: 40 },
+      maxZoom: 17,
+      duration,
+    },
+  );
+}
+
 function prefersReducedMotion(): boolean {
   return window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
 }
 
 const MARKER_CLASS = 'trajecto-marker';
+
+/** Identifica o estilo aplicado (tema, língua e relevo), para só o refazer quando muda. */
+function styleKey(theme: MapTheme, options: MapStyleOptions): string {
+  return [theme, options.exitPrefix ?? '', options.reliefTilesUrl ?? ''].join('|');
+}
+/** Margem (px) à volta do toque para acertar num ícone com o dedo. */
+const TAP_SLOP = 10;
+
+/** Lê um local tocado; ignora o que não tiver nome ou posição. */
+function poiFromFeature(feature: {
+  geometry: { type: string; coordinates?: unknown };
+  properties: Record<string, unknown> | null;
+}): MapPoi | null {
+  const props = feature.properties ?? {};
+  const name = props['name:pt'] ?? props.name;
+  const cls = props.class;
+  const subclass = props.subclass;
+  if (typeof name !== 'string' || !name.trim() || typeof cls !== 'string') return null;
+  if (feature.geometry.type !== 'Point' || !Array.isArray(feature.geometry.coordinates))
+    return null;
+  const [lng, lat] = feature.geometry.coordinates as unknown[];
+  if (typeof lng !== 'number' || typeof lat !== 'number') return null;
+  const category = subclass === 'subway' || subclass === 'charging_station' ? subclass : cls;
+  return { lngLat: { lng, lat }, name: name.trim().slice(0, 300), category };
+}
 
 function readView(map: MapLibreMap): MapViewState {
   const center = map.getCenter();
@@ -126,7 +192,7 @@ export function MapView(props: MapViewProps) {
   const { t, i18n } = useTranslation();
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
-  const appliedThemeRef = useRef<MapTheme>(props.theme);
+  const appliedStyleRef = useRef('');
   const selectedMarkerRef = useRef<Marker | null>(null);
   const favoriteMarkersRef = useRef<Marker[]>([]);
   const routeMarkersRef = useRef<Marker[]>([]);
@@ -135,19 +201,30 @@ export function MapView(props: MapViewProps) {
   const geolocateRef = useRef<GeolocateControl | null>(null);
   const wasNavigatingRef = useRef(false);
   const routeDataRef = useRef(routesToGeoJson([], 0));
+  const transitDataRef = useRef(transitToGeoJson(null));
   const [failed, setFailed] = useState(false);
 
   const onMapClick = useEffectEvent(props.onMapClick);
+  const onPoiClick = useEffectEvent((poi: MapPoi): boolean => {
+    if (!props.onPoiClick) return false;
+    props.onPoiClick(poi);
+    return true;
+  });
   const onRouteClick = useEffectEvent((index: number) => props.onRouteClick?.(index));
   const onUserMove = useEffectEvent(() => props.onUserMove?.());
   const onReportClick = useEffectEvent((report: Report) => props.onReportClick?.(report));
   const onFavoriteClick = useEffectEvent(props.onFavoriteClick);
   const onViewChange = useEffectEvent(props.onViewChange);
   const onReady = useEffectEvent(props.onReady);
+  const styleOptions = (): MapStyleOptions => ({
+    ...props.config,
+    exitPrefix: t('map.exitPrefix'),
+    reliefTilesUrl: props.relief ? props.config.reliefTilesUrl : null,
+  });
   const readInitial = useEffectEvent(() => ({
     theme: props.theme,
     view: props.initialView,
-    config: props.config,
+    style: styleOptions(),
     locale: t('map.controls', { returnObjects: true }) as Record<string, string>,
   }));
 
@@ -160,7 +237,7 @@ export function MapView(props: MapViewProps) {
     try {
       map = new MapLibreMap({
         container,
-        style: buildMapStyle(initial.theme, initial.config),
+        style: buildMapStyle(initial.theme, initial.style),
         center: [initial.view.center.lng, initial.view.center.lat],
         zoom: initial.view.zoom,
         maxPitch: 85,
@@ -175,7 +252,9 @@ export function MapView(props: MapViewProps) {
       setFailed(true);
       return;
     }
-    appliedThemeRef.current = initial.theme;
+    appliedStyleRef.current = styleKey(initial.theme, initial.style);
+    // Os ícones (locais, setas, escudos) são desenhados no browser quando o estilo os pede.
+    installMapImages(map);
 
     map.addControl(new NavigationControl({ visualizePitch: true }), 'top-right');
     geolocateRef.current = createGeolocate();
@@ -196,10 +275,36 @@ export function MapView(props: MapViewProps) {
         onRouteClick(index);
         return;
       }
+      // Um toque num local com ícone mostra esse local (nome e categoria).
+      const poiLayers = POI_LAYERS.filter((id) => map.getLayer(id));
+      if (poiLayers.length > 0) {
+        const { x, y } = event.point;
+        const features = map.queryRenderedFeatures(
+          [
+            [x - TAP_SLOP, y - TAP_SLOP],
+            [x + TAP_SLOP, y + TAP_SLOP],
+          ],
+          { layers: poiLayers },
+        );
+        const poi = features.map(poiFromFeature).find((item) => item !== null);
+        if (poi && onPoiClick(poi)) return;
+      }
       onMapClick({ lng: event.lngLat.lng, lat: event.lngLat.lat });
     });
+    // No computador, o cursor indica que os locais se podem tocar.
+    for (const id of POI_LAYERS) {
+      map.on('mouseenter', id, () => {
+        map.getCanvas().style.cursor = 'pointer';
+      });
+      map.on('mouseleave', id, () => {
+        map.getCanvas().style.cursor = '';
+      });
+    }
     // As camadas da rota são parte do estilo: voltam a ser criadas quando o tema muda.
-    map.on('style.load', () => addRouteLayers(map, routeDataRef.current));
+    map.on('style.load', () => {
+      addRouteLayers(map, routeDataRef.current);
+      addTransitLayers(map, transitDataRef.current);
+    });
     for (const type of ['dragstart', 'zoomstart', 'rotatestart', 'pitchstart'] as const) {
       map.on(type, (event: { originalEvent?: Event }) => {
         if (event.originalEvent) onUserMove();
@@ -224,13 +329,17 @@ export function MapView(props: MapViewProps) {
     };
   }, []);
 
-  // Tema claro/escuro.
+  // Tema claro/escuro, língua (texto das saídas das autoestradas) e relevo.
+  const exitPrefix = t('map.exitPrefix');
+  const reliefTilesUrl = props.relief ? props.config.reliefTilesUrl : null;
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || appliedThemeRef.current === props.theme) return;
-    appliedThemeRef.current = props.theme;
-    map.setStyle(buildMapStyle(props.theme, props.config));
-  }, [props.theme, props.config]);
+    const options: MapStyleOptions = { ...props.config, exitPrefix, reliefTilesUrl };
+    const key = styleKey(props.theme, options);
+    if (!map || appliedStyleRef.current === key) return;
+    appliedStyleRef.current = key;
+    map.setStyle(buildMapStyle(props.theme, options));
+  }, [props.theme, props.config, exitPrefix, reliefTilesUrl]);
 
   // Marcador do local selecionado.
   useEffect(() => {
@@ -346,26 +455,23 @@ export function MapView(props: MapViewProps) {
       if (ended) map.easeTo({ ...FLAT_CAMERA, duration });
       return;
     }
-    // Um único movimento de câmara: outro movimento logo a seguir cancelaria este.
     replaceGeolocate(map, geolocateRef, true);
-    map.jumpTo(FLAT_CAMERA);
-    const [west, south, east, north] = routesBounds(routes);
-    const container = map.getContainer();
-    const wide = container.clientWidth >= 768;
-    map.fitBounds(
-      [
-        [west, south],
-        [east, north],
-      ],
-      {
-        padding: wide
-          ? { top: 90, bottom: 60, left: 420, right: 70 }
-          : { top: 90, bottom: Math.round(container.clientHeight * 0.5), left: 40, right: 40 },
-        maxZoom: 17,
-        duration,
-      },
-    );
+    showBounds(map, routesBounds(routes), duration);
   }, [routes, navigating]);
+
+  // Transportes públicos: o itinerário escolhido, com a câmara a mostrá-lo todo.
+  const transit = props.transit ?? null;
+  useEffect(() => {
+    const map = mapRef.current;
+    transitDataRef.current = transitToGeoJson(transit);
+    if (!map) return;
+    const source = map.getSource(TRANSIT_SOURCE) as GeoJSONSource | undefined;
+    if (source) source.setData(transitDataRef.current);
+    else if (map.isStyleLoaded()) addTransitLayers(map, transitDataRef.current);
+    if (!transit) return;
+    replaceGeolocate(map, geolocateRef, true);
+    showBounds(map, transit.bbox, prefersReducedMotion() ? 0 : 800);
+  }, [transit]);
 
   // Marcadores da partida, paragens e destino.
   useEffect(() => {

@@ -1,6 +1,6 @@
 name: Serviços reais
 
-# Confirma que os serviços externos (Valhalla da FOSSGIS e Open-Meteo) continuam a responder no
+# Confirma que os serviços externos (Valhalla da FOSSGIS, Open-Meteo e Transitous) continuam a responder no
 # formato que a app espera, pelo mesmo código das funções do Vercel. Poucos pedidos por execução.
 on:
   workflow_dispatch:
@@ -49,6 +49,8 @@ jobs:
           TRAJECTO_LIVE: '1'
           # Site publicado (deve abrir sem login).
           TRAJECTO_PRODUCTION_URL: https://trajecto-psi.vercel.app
+          # Pôr a '1' depois de publicar em produção a Fase 6 (função /api/transit).
+          TRAJECTO_PRODUCTION_TRANSIT: '0'
 
       - name: Respostas recebidas
         if: always()

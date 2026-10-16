@@ -26,6 +26,7 @@ O backend é necessário a partir da Fase 2 (rotas). Para um programador individ
 4. **Cache, limites de frequência e filas (entra na Fase 4):** Valkey 9.1.2 (BSD-3-Clause), com Streams.
    - A fila fica atrás de uma interface, para poder migrar para NATS JetStream 2.15.1 se for preciso.
 5. **Transportes públicos (Fase 6):** MOTIS 2.11.3 (MIT), com suporte para GTFS, NeTEx e GTFS-RT. A decisão será confirmada nessa fase.
+   - Atualizado pelo [ADR 0015](0015-transportes-publicos-transitous.md): usa-se o MOTIS público do Transitous (v2.11.1), sem servidor próprio.
 6. **Testes:**
 
    | Ferramenta | Versão | Uso |

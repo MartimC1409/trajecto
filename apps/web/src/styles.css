@@ -9,6 +9,7 @@
   --accent: #0b57d0;
   --accent-contrast: #ffffff;
   --danger: #b3261e;
+  --success: #1e6b34;
   --focus: #0b57d0;
   --shadow: 0 2px 12px rgb(0 0 0 / 0.18);
   --radius: 12px;
@@ -36,6 +37,7 @@
   --accent: #8ab4f8;
   --accent-contrast: #0d1b2a;
   --danger: #ffb4ab;
+  --success: #8fd19e;
   --focus: #8ab4f8;
   --shadow: 0 2px 14px rgb(0 0 0 / 0.5);
   color-scheme: dark;
@@ -369,6 +371,13 @@ a {
   color: var(--text-muted);
 }
 
+.sheet-category {
+  margin: 4px 0 0;
+  color: var(--accent);
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
 .sheet-coords {
   font-variant-numeric: tabular-nums;
   font-size: 0.875rem;
@@ -518,22 +527,26 @@ a {
 /* Direções */
 .sheet.directions {
   max-height: 62vh;
-  /* O espaço do fundo passa para o fim do conteúdo: assim a barra "Iniciar" encosta mesmo ao
-     fundo do painel (os browsers contam o padding do painel na posição "sticky"). */
-  padding-bottom: 0;
+  /* Corpo que desliza + rodapé fixo com "Iniciar": a barra nunca tapa outros botões. */
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 0;
 }
 
-.sheet.directions::after {
-  content: '';
-  display: block;
-  height: calc(16px + env(safe-area-inset-bottom));
+.directions-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 16px 16px calc(16px + env(safe-area-inset-bottom));
+}
+
+.directions-body:not(:last-child) {
+  padding-bottom: 16px;
 }
 
 .start-bar {
-  position: sticky;
-  bottom: 0;
-  z-index: 1;
-  margin: 14px -16px 0;
+  flex: none;
   padding: 0 16px calc(10px + env(safe-area-inset-bottom));
   background: var(--surface);
   box-shadow: 0 -1px 0 var(--border);
@@ -597,6 +610,13 @@ a {
 
 .mode-tab:has(input:focus-visible) {
   outline: 3px solid var(--focus);
+}
+
+/* Transportes públicos: linha própria, com o ícone ao lado do nome. */
+.mode-tab-wide {
+  grid-column: 1 / -1;
+  flex-direction: row;
+  gap: 8px;
 }
 
 .waypoint-list {
@@ -763,6 +783,52 @@ a {
   display: flex;
   flex-direction: column;
   gap: 2px;
+}
+
+/* Transportes públicos */
+.transit-legs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.line-badge,
+.walk-badge {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 4px;
+  min-height: 24px;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.walk-badge {
+  padding: 2px 4px;
+  color: var(--text-muted);
+  font-weight: 400;
+}
+
+.transit-steps .line-badge {
+  margin-top: 2px;
+}
+
+.transit-time {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.transit-late {
+  color: var(--danger);
+  font-weight: 600;
+}
+
+.transit-on-time {
+  color: var(--success);
 }
 
 /* Meteorologia na rota */
@@ -1239,6 +1305,14 @@ button.report-marker {
 
   .whats-here {
     bottom: calc(40px + env(safe-area-inset-bottom));
+  }
+}
+
+/* No telemóvel, o MapLibre mostra as atribuições abertas até o mapa se mexer (depois ficam no
+   botão "i"): enquanto estão abertas, o botão "Que sítio é este?" sobe para não as tapar. */
+@media (max-width: 639px) {
+  .app:has(.maplibregl-ctrl-attrib.maplibregl-compact-show) .whats-here {
+    bottom: calc(96px + env(safe-area-inset-bottom));
   }
 }
 

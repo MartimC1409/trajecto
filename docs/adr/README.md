@@ -23,5 +23,7 @@ Estados possíveis:
 | [0011](0011-rotas-e-navegacao.md) | Rotas e navegação (Fases 2 e 3) | Aceite | 2026-10-14 |
 | [0012](0012-meteorologia-na-rota.md) | Fase 4: meteorologia na rota, sem trânsito próprio | Aceite | 2026-10-15 |
 | [0013](0013-reportes-locais-e-radares.md) | Fase 5: reportes no dispositivo e radares fixos do OpenStreetMap | Aceite | 2026-10-15 |
+| [0014](0014-mapa-detalhado-e-relevo.md) | Mapa mais detalhado e relevo do terreno | Aceite | 2026-10-15 |
+| [0015](0015-transportes-publicos-transitous.md) | Fase 6: transportes públicos pelo Transitous | Aceite | 2026-10-15 |
 
 O contexto completo está em [`../fase-0-planeamento.md`](../fase-0-planeamento.md).

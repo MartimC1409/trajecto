@@ -1,0 +1,76 @@
+name: Mapa à vista
+
+# Fotografias do mapa com os tiles reais (o ambiente de desenvolvimento não chega aos serviços de
+# mapas). As imagens vão para o ramo "claude/capturas-mapa" (substituído a cada execução) e para
+# um artefacto do Actions.
+on:
+  workflow_dispatch:
+  push:
+    branches: ['claude/**']
+    paths:
+      - '.github/workflows/map-screenshots.yml'
+      - 'apps/web/scripts/map-screenshots.mjs'
+      - 'apps/web/src/map/**'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: map-screenshots
+  cancel-in-progress: true
+
+jobs:
+  screenshots:
+    name: Fotografias do mapa
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Instalar browsers (Chromium e WebKit)
+        run: pnpm --filter @trajecto/web exec playwright install --with-deps chromium webkit
+
+      - name: Relevo (Mapterhorn) responde com CORS
+        run: |
+          curl -sS -D - -o /dev/null -H 'Origin: https://trajecto-psi.vercel.app' \
+            https://tiles.mapterhorn.com/12/1944/1556.webp | grep -iE '^(HTTP|access-control-allow-origin|content-type|cache-control)'
+          curl -sS https://tiles.mapterhorn.com/tilejson.json | head -c 1500; echo
+
+      - name: Build e fotografias
+        working-directory: apps/web
+        run: |
+          pnpm build
+          pnpm preview --host 127.0.0.1 --port 4173 &
+          for i in $(seq 1 30); do curl -sf http://127.0.0.1:4173/ >/dev/null && break; sleep 1; done
+          node scripts/map-screenshots.mjs http://127.0.0.1:4173 map-screenshots
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: map-screenshots
+          path: apps/web/map-screenshots/
+          retention-days: 7
+
+      - name: Publicar no ramo claude/capturas-mapa
+        working-directory: apps/web/map-screenshots
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git init -q
+          git checkout -q -b capturas
+          git add .
+          git -c user.name="github-actions[bot]" \
+            -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+            commit -qm "Fotografias do mapa (${GITHUB_SHA})"
+          git push -qf "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" \
+            HEAD:refs/heads/claude/capturas-mapa
