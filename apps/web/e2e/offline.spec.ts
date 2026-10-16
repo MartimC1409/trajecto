@@ -155,6 +155,18 @@ test.describe('Trajecto (Fase 7: sem rede)', () => {
       // No WebKit, o Playwright não interceta os pedidos de uma página controlada por um service
       // worker: a transferência iria aos serviços reais. A transferência é testada no Chromium;
       // aqui a zona é posta diretamente no armazenamento, como a app a deixa.
+      // Visto no CI: o que a primeira página (aberta antes de o service worker a controlar)
+      // escreve na Cache Storage perde-se no WebKit ao recarregar. Guarda-se numa página já
+      // controlada; o caso da primeira visita está na verificação no iPhone.
+      await page.evaluate(async () => {
+        const cache = await caches.open('trajecto-offline-tiles-v1');
+        await cache.put(`${location.origin}/__offline/tiles/0/0/0`, new Response(null));
+      });
+      await page.reload();
+      // Registo para o CI: o tile escrito pela primeira página sobreviveu ao recarregar?
+      console.log(
+        `WebKit, escrito antes de recarregar: ${JSON.stringify(await readStoredTile(page, '0/0/0'))}`,
+      );
       await saveAreaDirectly(page);
       diagnostics.push(['guardado', await readStoredTile(page, CENTER_TILE)]);
       await page.reload();
