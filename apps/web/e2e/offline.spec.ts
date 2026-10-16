@@ -1,5 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
+import type { Page } from '@playwright/test';
 import { isCspViolation, mockServices, recordCspViolations } from './support';
 
 const WCAG_TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'];
@@ -7,26 +8,77 @@ const WCAG_TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'];
 // Este teste precisa do service worker (a app abre sem rede).
 test.use({ serviceWorkers: 'allow' });
 
+const CENTER = { lng: -9.1365, lat: 38.7107 };
+/** Zona à volta do centro, maior do que o ecrã no zoom 16 (telemóvel e computador). */
+const AREA: [number, number, number, number] = [-9.155, 38.699, -9.118, 38.722];
+
+function tileOf(lng: number, lat: number, z: number): [number, number] {
+  const n = 2 ** z;
+  const rad = (lat * Math.PI) / 180;
+  return [
+    Math.floor(((lng + 180) / 360) * n),
+    Math.floor(((1 - Math.log(Math.tan(rad) + 1 / Math.cos(rad)) / Math.PI) / 2) * n),
+  ];
+}
+
+/** Guarda uma zona como a app (tiles vazios na Cache Storage e o registo da zona). */
+async function saveAreaDirectly(page: Page) {
+  const keys: string[] = [];
+  for (let z = 0; z <= 14; z += 1) {
+    const [minX, minY] = tileOf(AREA[0], AREA[3], z);
+    const [maxX, maxY] = tileOf(AREA[2], AREA[1], z);
+    for (let x = minX; x <= maxX; x += 1) {
+      for (let y = minY; y <= maxY; y += 1) keys.push(`${String(z)}/${String(x)}/${String(y)}`);
+    }
+  }
+  await page.evaluate(
+    async ({ tiles, bbox }) => {
+      const cache = await caches.open('trajecto-offline-tiles-v1');
+      for (const key of tiles) {
+        await cache.put(`${location.origin}/__offline/tiles/${key}`, new Response(null));
+      }
+      localStorage.setItem(
+        'trajecto:v1:offline-areas',
+        JSON.stringify({
+          version: 1,
+          areas: [
+            {
+              id: 'baixa',
+              name: 'Lisboa',
+              bbox,
+              minZoom: 0,
+              maxZoom: 14,
+              tiles: tiles.length,
+              bytes: 0,
+              version: 'latest',
+              createdAt: Date.now(),
+              complete: true,
+            },
+          ],
+        }),
+      );
+    },
+    { tiles: keys, bbox: AREA },
+  );
+}
+
 test.describe('Trajecto (Fase 7: sem rede)', () => {
   test('guarda a zona visível, e sem rede a app abre e mostra o mapa guardado', async ({
     page,
     context,
+    browserName,
   }) => {
     const mocks = await mockServices(page);
     const cspViolations = await recordCspViolations(page);
     // Vista inicial pequena (Baixa de Lisboa, zoom 16): poucos tiles a guardar. Sem relevo: não é
     // guardado para usar sem rede (ADR 0016) e daria avisos esperados.
-    await page.addInitScript(() => {
+    await page.addInitScript((center) => {
       if (window.localStorage.getItem('trajecto:v1:preferences')) return;
       window.localStorage.setItem(
         'trajecto:v1:preferences',
-        JSON.stringify({
-          version: 1,
-          lastView: { center: { lng: -9.1365, lat: 38.7107 }, zoom: 16 },
-          mapRelief: false,
-        }),
+        JSON.stringify({ version: 1, lastView: { center, zoom: 16 }, mapRelief: false }),
       );
-    });
+    }, CENTER);
     const warnings: string[] = [];
     page.on('console', (message) => {
       if (message.type() === 'warning') warnings.push(message.text());
@@ -42,15 +94,24 @@ test.describe('Trajecto (Fase 7: sem rede)', () => {
     await page.getByRole('button', { name: 'Abrir menu' }).click();
     const section = page.getByRole('region', { name: 'Mapas offline' });
     await expect(section).toContainText(/Zona no ecrã: cerca de/u);
-    await section.getByRole('button', { name: 'Guardar esta zona' }).click();
-    await expect(section.getByRole('status')).toHaveText(
-      '«Lisboa» está guardada: o mapa desta zona funciona sem rede.',
-    );
+    if (browserName === 'webkit') {
+      // No WebKit, o Playwright não interceta os pedidos de uma página controlada por um service
+      // worker: a transferência iria aos serviços reais. A transferência é testada no Chromium;
+      // aqui a zona é posta diretamente no armazenamento, como a app a deixa.
+      await saveAreaDirectly(page);
+      await page.reload();
+      await page.getByRole('button', { name: 'Abrir menu' }).click();
+    } else {
+      await section.getByRole('button', { name: 'Guardar esta zona' }).click();
+      await expect(section.getByRole('status')).toHaveText(
+        '«Lisboa» está guardada: o mapa desta zona funciona sem rede.',
+      );
+      // Os pedidos passam pela função própria (User-Agent da app), com a versão dos tiles.
+      expect(mocks.offlineTileRequests.length).toBeGreaterThan(10);
+      expect(mocks.offlineTileRequests.length).toBeLessThanOrEqual(3000);
+      expect(mocks.offlineTileRequests[0]?.searchParams.get('v')).toBe('latest');
+    }
     await expect(section.getByRole('list', { name: 'Zonas guardadas' })).toContainText('Lisboa');
-    // Os pedidos passam pela função própria (User-Agent da app), com a versão dos tiles.
-    expect(mocks.offlineTileRequests.length).toBeGreaterThan(10);
-    expect(mocks.offlineTileRequests.length).toBeLessThanOrEqual(3000);
-    expect(mocks.offlineTileRequests[0]?.searchParams.get('v')).toBe('latest');
     const results = await new AxeBuilder({ page }).withTags(WCAG_TAGS).analyze();
     expect(results.violations, JSON.stringify(results.violations, null, 2)).toEqual([]);
 
