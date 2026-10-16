@@ -157,6 +157,7 @@ describe.skipIf(!LIVE)('serviços reais', () => {
         const response = await handleOfflineTileRequest(
           new Request(
             `https://trajecto.example/api/offline-tile?v=${version}&z=${String(tile.z)}&x=${String(tile.x)}&y=${String(tile.y)}`,
+            { headers: { 'Sec-Fetch-Site': 'same-origin' } },
           ),
         );
         expect([200, 204]).toContain(response.status);
@@ -267,7 +268,10 @@ describe.skipIf(!LIVE || !PRODUCTION)('produção', () => {
   it.skipIf(!PRODUCTION_OFFLINE)(
     'mapas offline: um tile de Lisboa através da função do Vercel',
     async () => {
-      const response = await fetch(at('/api/offline-tile?v=latest&z=14&x=7776&y=6277'));
+      // Como o browser da app (a função recusa pedidos sem a origem).
+      const response = await fetch(at('/api/offline-tile?v=latest&z=14&x=7776&y=6277'), {
+        headers: { 'Sec-Fetch-Site': 'same-origin' },
+      });
       console.warn(
         `produção mapas offline: HTTP ${String(response.status)}, ${String(response.headers.get('x-tile-bytes'))} bytes`,
       );

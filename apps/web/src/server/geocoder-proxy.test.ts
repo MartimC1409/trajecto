@@ -61,6 +61,15 @@ describe('função geocoder (proxy para o Photon)', () => {
     );
   });
 
+  it('recusa pedidos de outros sites', async () => {
+    const { call, fetchMock } = setup();
+    const response = await call('endpoint=api&q=lisboa', {
+      headers: { 'Sec-Fetch-Site': 'cross-site' },
+    });
+    expect(response.status).toBe(403);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   it('recusa métodos que não sejam GET', async () => {
     const { fetchMock, call } = setup();
     const response = await call('endpoint=api&q=abc', { method: 'POST', body: 'x' });

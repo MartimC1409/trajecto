@@ -80,6 +80,15 @@ describe('função weather (proxy para o Open-Meteo)', () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
+  it('recusa pedidos de outros sites', async () => {
+    const { call, fetchMock } = setup();
+    const response = await call('lat=38.7&lon=-9.1', {
+      headers: { 'Sec-Fetch-Site': 'cross-site' },
+    });
+    expect(response.status).toBe(403);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   it('aceita as Canárias e recusa outros métodos', async () => {
     const { call } = setup();
     expect((await call('lat=28.47&lon=-16.25')).status).toBe(200);

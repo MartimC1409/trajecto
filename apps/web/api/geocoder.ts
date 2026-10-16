@@ -103,6 +103,11 @@ export async function handleGeocoderRequest(
   if (request.method !== 'GET') {
     return json({ error: 'method_not_allowed' }, 405, { Allow: 'GET' });
   }
+  // Os browsers indicam a origem do pedido: só aceitamos pedidos da própria aplicação.
+  const site = request.headers.get('sec-fetch-site');
+  if (site !== null && site !== 'same-origin' && site !== 'none') {
+    return json({ error: 'forbidden' }, 403);
+  }
 
   const url = new URL(request.url);
   const endpoint = endpointOf(url);

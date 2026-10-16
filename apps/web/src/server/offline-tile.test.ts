@@ -18,13 +18,20 @@ function setup(response: Response | (() => Promise<Response>) = new Response(TIL
   const fetchMock = vi.fn<typeof fetch>(
     typeof response === 'function' ? response : async () => response,
   );
+  // Por omissão, como o browser: pedido da própria app.
   const call = (query: string, init: RequestInit = {}) =>
-    handleOfflineTileRequest(new Request(`${BASE}?${query}`, init), {
-      upstream: 'https://ofm.test/planet',
-      fetch: fetchMock,
-      timeoutMs: 50,
-      maxResponseBytes: 10_000,
-    });
+    handleOfflineTileRequest(
+      new Request(`${BASE}?${query}`, {
+        ...init,
+        headers: { 'Sec-Fetch-Site': 'same-origin', ...(init.headers as Record<string, string>) },
+      }),
+      {
+        upstream: 'https://ofm.test/planet',
+        fetch: fetchMock,
+        timeoutMs: 50,
+        maxResponseBytes: 10_000,
+      },
+    );
   return { fetchMock, call };
 }
 
@@ -65,6 +72,10 @@ describe('função offline-tile (transferências para mapas offline)', () => {
     expect(Number(response.headers.get('x-tile-bytes'))).toBe(body.byteLength);
     expect(body.byteLength).toBeLessThan(TILE.byteLength);
     expect(new Uint8Array(gunzipSync(body))).toEqual(TILE);
+    // Versão fixa: a CDN do Vercel guarda o tile (não volta ao OpenFreeMap).
+    expect(response.headers.get('cache-control')).toBe(
+      'public, max-age=86400, s-maxage=2592000, immutable',
+    );
   });
 
   it('aceita a versão "latest" e devolve 204 para tiles vazios', async () => {
@@ -75,6 +86,7 @@ describe('função offline-tile (transferências para mapas offline)', () => {
     );
     expect(response.status).toBe(204);
     expect(response.headers.get('x-tile-bytes')).toBe('0');
+    expect(response.headers.get('cache-control')).toBe('public, max-age=3600, s-maxage=3600');
     expect((await setup(new Response(new Uint8Array())).call(LISBOA)).status).toBe(204);
   });
 
@@ -93,8 +105,11 @@ describe('função offline-tile (transferências para mapas offline)', () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it('recusa outros métodos e pedidos de outros sites', async () => {
-    const { call } = setup();
+  it('recusa outros métodos, pedidos de outros sites e pedidos sem a origem (fora do browser)', async () => {
+    const { call, fetchMock } = setup();
+    const direct = await handleOfflineTileRequest(new Request(`${BASE}?${LISBOA}`));
+    expect(direct.status).toBe(403);
+    expect(fetchMock).not.toHaveBeenCalled();
     expect((await call(LISBOA, { method: 'POST' })).status).toBe(405);
     expect((await call(LISBOA, { headers: { 'Sec-Fetch-Site': 'cross-site' } })).status).toBe(403);
   });
@@ -121,7 +136,9 @@ describe('função offline-tile (transferências para mapas offline)', () => {
     const fetchMock = vi.fn<typeof fetch>(async () => new Response(TILE));
     vi.stubGlobal('fetch', fetchMock);
     try {
-      const response = await GET(new Request(`${BASE}?${LISBOA}`));
+      const response = await GET(
+        new Request(`${BASE}?${LISBOA}`, { headers: { 'Sec-Fetch-Site': 'same-origin' } }),
+      );
       expect(response.status).toBe(200);
       expect(String((fetchMock.mock.calls[0] as unknown[])[0])).toBe(
         'https://tiles.openfreemap.org/planet/20231227_043106_pt/14/7776/6277.pbf',

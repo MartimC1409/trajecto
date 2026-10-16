@@ -100,7 +100,10 @@ describe('apiPlugin', () => {
     vi.stubGlobal('fetch', fetchMock);
     const { res, done } = response();
     const req = request('GET', '');
-    Object.assign(req, { url: '/?v=latest&z=0&x=0&y=0' });
+    Object.assign(req, {
+      url: '/?v=latest&z=0&x=0&y=0',
+      headers: { ...req.headers, 'sec-fetch-site': 'same-origin' },
+    });
     mount(apiPlugin(), 'configureServer', '/api/offline-tile')(req, res);
     expect(await done).toBe('');
     expect(res.statusCode).toBe(204);

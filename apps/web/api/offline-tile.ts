@@ -106,9 +106,11 @@ export async function handleOfflineTileRequest(
   if (request.method !== 'GET') {
     return json({ error: 'method_not_allowed' }, 405, { Allow: 'GET' });
   }
-  // Os browsers indicam a origem do pedido: só aceitamos pedidos da própria aplicação.
-  const site = request.headers.get('sec-fetch-site');
-  if (site !== null && site !== 'same-origin' && site !== 'none') {
+  // Só pedidos da própria aplicação. Ao contrário das outras funções, o cabeçalho é obrigatório:
+  // os browsers com mapas offline (Cache Storage e DecompressionStream; Safari 16.4 ou mais
+  // recente) enviam-no sempre. Dificulta usar a função fora da app (com o User-Agent da app),
+  // mas não o impede; ver docs/fase-7/seguranca.md.
+  if (request.headers.get('sec-fetch-site') !== 'same-origin') {
     return json({ error: 'forbidden' }, 403);
   }
 
@@ -157,8 +159,12 @@ export async function handleOfflineTileRequest(
   if (!body) return json({ error: 'upstream_too_large' }, 502);
 
   const headers = {
-    // Os tiles de uma versão não mudam; a app guarda-os ela própria (Cache Storage).
-    'Cache-Control': 'private, max-age=86400',
+    // Os tiles de uma versão não mudam: a CDN do Vercel guarda-os, e pedidos repetidos não voltam
+    // ao OpenFreeMap. "latest" muda (até 1 dia de cache no próprio OpenFreeMap).
+    'Cache-Control':
+      version === 'latest'
+        ? 'public, max-age=3600, s-maxage=3600'
+        : 'public, max-age=86400, s-maxage=2592000, immutable',
     'X-Content-Type-Options': 'nosniff',
   };
   // Tile vazio (por exemplo, mar aberto): sem corpo.

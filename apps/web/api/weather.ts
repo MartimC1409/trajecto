@@ -105,6 +105,11 @@ export async function handleWeatherRequest(
       headers: { 'Content-Type': 'application/json; charset=utf-8', Allow: 'GET' },
     });
   }
+  // Os browsers indicam a origem do pedido: só aceitamos pedidos da própria aplicação.
+  const site = request.headers.get('sec-fetch-site');
+  if (site !== null && site !== 'same-origin' && site !== 'none') {
+    return json({ error: 'forbidden' }, 403);
+  }
   const url = new URL(request.url);
   const lats = parseList(url.searchParams.get('lat'), 90);
   const lons = parseList(url.searchParams.get('lon'), 180);
