@@ -1,3 +1,6 @@
+import { mkdtemp, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
@@ -63,6 +66,36 @@ async function saveAreaDirectly(page: Page) {
 }
 
 test.describe('Trajecto (Fase 7: sem rede)', () => {
+  test('a app é instalável (sem erros de instalação no Chromium)', async ({
+    playwright,
+    browserName,
+    launchOptions,
+    baseURL,
+  }) => {
+    test.skip(browserName !== 'chromium', 'Só o Chromium indica os erros de instalação (CDP).');
+    // Os contextos habituais do Playwright são anónimos, e aí o Chrome só responde "in-incognito":
+    // é preciso um perfil normal (numa pasta sem acentos: com eles o service worker não arranca).
+    const profile = await mkdtemp(join(tmpdir(), 'trajecto-perfil-'));
+    const context = await playwright.chromium.launchPersistentContext(profile, {
+      ...launchOptions,
+      ...(baseURL ? { baseURL } : {}),
+    });
+    try {
+      const page = context.pages()[0] ?? (await context.newPage());
+      await mockServices(page);
+      await page.goto('/');
+      await page.evaluate(async () => {
+        await navigator.serviceWorker.ready;
+      });
+      const cdp = await context.newCDPSession(page);
+      const { installabilityErrors } = await cdp.send('Page.getInstallabilityErrors');
+      expect(installabilityErrors).toEqual([]);
+    } finally {
+      await context.close();
+      await rm(profile, { recursive: true, force: true });
+    }
+  });
+
   test('guarda a zona visível, e sem rede a app abre e mostra o mapa guardado', async ({
     page,
     context,
