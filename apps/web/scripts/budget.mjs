@@ -8,9 +8,10 @@
  * - App: tamanho dos ficheiros que o service worker guarda, comprimidos (gzip).
  * - Abrir o mapa: bytes na primeira visita e ao voltar (cache do browser e service worker).
  * - Navegação simulada em Lisboa (Marquês de Pombal → Oriente), 2 minutos a 4× (8 minutos de
- *   condução), com e sem relevo: bytes por tipo e tempo do processador na página (CDP
- *   Performance.getMetrics, "TaskDuration"). No CI o desenho do mapa é feito por software
- *   (SwiftShader), por isso os valores servem para comparar variantes, não para prever a bateria.
+ *   condução), com e sem relevo, e com a zona da rota guardada (mapas offline): bytes por tipo e
+ *   tempo do processador na página (CDP Performance.getMetrics, "TaskDuration"). No CI o desenho
+ *   do mapa é feito por software (SwiftShader), por isso os valores servem para comparar
+ *   variantes, não para prever a bateria.
  * - Zona offline pequena (Baixa, zoom 16): estimativa da app e bytes reais transferidos.
  */
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
@@ -25,6 +26,8 @@ const origin = new URL(baseUrl).origin;
 
 const START = { latitude: 38.7253, longitude: -9.15 }; // Marquês de Pombal
 const DESTINATION = { lng: -9.0945, lat: 38.7686 }; // Oriente
+/** Vista que mostra a rota toda no telemóvel (zona a guardar antes de navegar). */
+const ROUTE_VIEW = { center: { lng: -9.122, lat: 38.747 }, zoom: 12 };
 const SIMULATION_S = 120;
 const SIMULATION_FACTOR = 4;
 
@@ -124,14 +127,42 @@ async function openMap(browser) {
   return { first, again };
 }
 
-async function navigation(browser, relief) {
+/** Guarda a zona visível pelo menu "Mapas offline" e devolve o resultado. */
+async function saveVisibleZone(page) {
+  await page.getByRole('button', { name: 'Abrir menu' }).click();
+  const section = page.getByRole('region', { name: 'Mapas offline' });
+  const estimate = await section.getByText(/Zona no ecrã/u).textContent();
+  await section.getByRole('button', { name: 'Guardar esta zona' }).click();
+  await section.getByText(/está guardada|ficou incompleta|parou/u).waitFor({ timeout: 180_000 });
+  const message = await section.getByRole('status').textContent();
+  const area = await page.evaluate(() => {
+    const raw = window.localStorage.getItem('trajecto:v1:offline-areas');
+    return raw ? JSON.parse(raw).areas[0] : null;
+  });
+  return { estimate, message, tiles: area?.tiles, storedBytes: area?.bytes };
+}
+
+async function navigation(browser, relief, { savedZone = false } = {}) {
+  const destinationView = { center: DESTINATION, zoom: 15 };
   const { context, page, network } = await newPage(browser, {
     relief,
     geolocation: START,
-    view: { center: DESTINATION, zoom: 15 },
+    view: savedZone ? ROUTE_VIEW : destinationView,
   });
   await page.goto(baseUrl);
   await waitForMap(page);
+  let zone;
+  if (savedZone) {
+    zone = await saveVisibleZone(page);
+    // Volta à vista do destino; a zona fica guardada no dispositivo.
+    await page.evaluate((lastView) => {
+      const key = 'trajecto:v1:preferences';
+      const preferences = JSON.parse(window.localStorage.getItem(key) ?? '{}');
+      window.localStorage.setItem(key, JSON.stringify({ ...preferences, lastView }));
+    }, destinationView);
+    await page.reload();
+    await waitForMap(page);
+  }
   // Destino: o centro do mapa (pesquisa inversa real), depois "Direções" e "Simular".
   const box = await page.locator('canvas.maplibregl-canvas').boundingBox();
   await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
@@ -155,6 +186,7 @@ async function navigation(browser, relief) {
   const after = await network.taskSeconds();
   const result = {
     relief,
+    savedZone: zone ?? null,
     elapsedSeconds: Math.round(elapsed),
     drivingMinutes: (elapsed * SIMULATION_FACTOR) / 60,
     mainThreadBusy: (after - before) / elapsed,
@@ -171,20 +203,11 @@ async function offlineArea(browser) {
   });
   await page.goto(baseUrl);
   await waitForMap(page);
-  await page.getByRole('button', { name: 'Abrir menu' }).click();
-  const section = page.getByRole('region', { name: 'Mapas offline' });
-  const estimate = await section.getByText(/Zona no ecrã/u).textContent();
   network.reset();
-  await section.getByRole('button', { name: 'Guardar esta zona' }).click();
-  await section.getByText(/está guardada|ficou incompleta|parou/u).waitFor({ timeout: 120_000 });
-  const message = await section.getByRole('status').textContent();
-  const area = await page.evaluate(() => {
-    const raw = window.localStorage.getItem('trajecto:v1:offline-areas');
-    return raw ? JSON.parse(raw).areas[0] : null;
-  });
+  const zone = await saveVisibleZone(page);
   const traffic = network.snapshot();
   await context.close();
-  return { estimate, message, tiles: area?.tiles, storedBytes: area?.bytes, ...traffic };
+  return { ...zone, ...traffic };
 }
 
 const mb = (bytes) => `${((bytes ?? 0) / 1e6).toFixed(2)} MB`;
@@ -194,15 +217,22 @@ const browser = await chromium.launch({
   ...(executablePath ? { executablePath } : {}),
   args: ['--enable-unsafe-swiftshader', '--use-angle=swiftshader', '--ignore-gpu-blocklist'],
 });
-const report = { baseUrl, date: new Date().toISOString() };
+const report = { baseUrl, date: new Date().toISOString(), errors: {} };
+/** Cada medição é independente: uma falha fica no relatório e as outras correm na mesma. */
+async function measure(name, run) {
+  try {
+    report[name] = await run();
+  } catch (error) {
+    report.errors[name] = String(error?.stack ?? error);
+  }
+}
 try {
-  report.app = await appSize();
-  report.openMap = await openMap(browser);
-  report.navigationWithRelief = await navigation(browser, true);
-  report.navigationWithoutRelief = await navigation(browser, false);
-  report.offlineArea = await offlineArea(browser);
-} catch (error) {
-  report.error = String(error?.stack ?? error);
+  await measure('app', () => appSize());
+  await measure('openMap', () => openMap(browser));
+  await measure('navigationWithRelief', () => navigation(browser, true));
+  await measure('navigationWithoutRelief', () => navigation(browser, false));
+  await measure('navigationWithSavedZone', () => navigation(browser, true, { savedZone: true }));
+  await measure('offlineArea', () => offlineArea(browser));
 } finally {
   await browser.close();
 }
@@ -222,12 +252,15 @@ if (report.openMap) {
     `- Abrir de novo: ${mb(sum(report.openMap.again.bytes))} (${JSON.stringify(report.openMap.again.bytes)}).`,
   );
 }
-for (const key of ['navigationWithRelief', 'navigationWithoutRelief']) {
+for (const key of ['navigationWithRelief', 'navigationWithoutRelief', 'navigationWithSavedZone']) {
   const nav = report[key];
   if (!nav) continue;
   const perHour = (sum(nav.bytes) / nav.drivingMinutes) * 60;
+  const zone = nav.savedZone
+    ? `, zona da rota guardada antes (${String(nav.savedZone.tiles)} tiles, ${mb(nav.savedZone.storedBytes)}; ${nav.savedZone.estimate ?? ''})`
+    : '';
   lines.push(
-    `- Navegação simulada ${nav.relief ? 'com' : 'sem'} relevo (${nav.drivingMinutes.toFixed(1)} min de condução): ${mb(sum(nav.bytes))}, ≈ ${mb(perHour)} por hora; processador ocupado na página ${(nav.mainThreadBusy * 100).toFixed(0)} % (${JSON.stringify(nav.bytes)}).`,
+    `- Navegação simulada ${nav.relief ? 'com' : 'sem'} relevo${zone} (${nav.drivingMinutes.toFixed(1)} min de condução): ${mb(sum(nav.bytes))}, ≈ ${mb(perHour)} por hora; processador ocupado na página ${(nav.mainThreadBusy * 100).toFixed(0)} % (${JSON.stringify(nav.bytes)}).`,
   );
 }
 if (report.offlineArea) {
@@ -235,7 +268,8 @@ if (report.offlineArea) {
     `- Zona offline (Baixa, zoom 16): ${report.offlineArea.estimate ?? ''} Guardados ${String(report.offlineArea.tiles)} tiles, ${mb(report.offlineArea.storedBytes)}; transferido ${mb(sum(report.offlineArea.bytes))}. ${report.offlineArea.message ?? ''}`,
   );
 }
-if (report.error) lines.push('', `Erro: ${report.error}`);
+for (const [name, error] of Object.entries(report.errors))
+  lines.push('', `Erro (${name}): ${error}`);
 await writeFile(join(outDir, 'budget.md'), `${lines.join('\n')}\n`);
 console.log(lines.join('\n'));
-if (report.error) process.exitCode = 1;
+if (Object.keys(report.errors).length > 0) process.exitCode = 1;
