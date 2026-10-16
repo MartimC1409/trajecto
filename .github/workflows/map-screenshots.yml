@@ -1,8 +1,8 @@
 name: Mapa à vista
 
 # Fotografias do mapa com os tiles reais (o ambiente de desenvolvimento não chega aos serviços de
-# mapas). As imagens vão para o ramo "claude/capturas-mapa" (substituído a cada execução) e para
-# um artefacto do Actions.
+# mapas) e orçamento de dados e processador (Fase 7). As imagens e os relatórios vão para o ramo
+# "claude/capturas-mapa" (substituído a cada execução) e para um artefacto do Actions.
 on:
   workflow_dispatch:
   push:
@@ -10,7 +10,10 @@ on:
     paths:
       - '.github/workflows/map-screenshots.yml'
       - 'apps/web/scripts/map-screenshots.mjs'
+      - 'apps/web/scripts/budget.mjs'
       - 'apps/web/src/map/**'
+      - 'apps/web/src/offline/**'
+      - 'apps/web/sw/**'
 
 permissions:
   contents: write
@@ -23,7 +26,7 @@ jobs:
   screenshots:
     name: Fotografias do mapa
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -47,21 +50,24 @@ jobs:
             https://tiles.mapterhorn.com/12/1944/1556.webp | grep -iE '^(HTTP|access-control-allow-origin|content-type|cache-control)'
           curl -sS https://tiles.mapterhorn.com/tilejson.json | head -c 1500; echo
 
-      - name: Build e fotografias
+      - name: Build, fotografias e orçamento de dados
         working-directory: apps/web
         run: |
           pnpm build
           pnpm preview --host 127.0.0.1 --port 4173 &
           for i in $(seq 1 30); do curl -sf http://127.0.0.1:4173/ >/dev/null && break; sleep 1; done
           node scripts/map-screenshots.mjs http://127.0.0.1:4173 map-screenshots
+          node scripts/budget.mjs http://127.0.0.1:4173 map-screenshots dist
 
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
         with:
           name: map-screenshots
           path: apps/web/map-screenshots/
           retention-days: 7
 
       - name: Publicar no ramo claude/capturas-mapa
+        if: always()
         working-directory: apps/web/map-screenshots
         env:
           GH_TOKEN: ${{ github.token }}
