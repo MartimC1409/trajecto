@@ -63,5 +63,5 @@ reais" passou a testar também `/api/transit` no site publicado (`TRAJECTO_PRODU
 - A cobertura e o tempo real dependem dos operadores; os horários podem estar incompletos.
 - O serviço é comunitário, sem garantia de disponibilidade, e tem limite de 20 pedidos por
   minuto por IP (o IP é o do servidor do Vercel).
-- A política do Transitous exige que o código esteja publicado: o repositório no GitHub tem de
-  ficar **público**.
+- A política do Transitous exige que o código esteja publicado: o repositório no GitHub é
+  público desde 2026-10-16, com licença MIT.
