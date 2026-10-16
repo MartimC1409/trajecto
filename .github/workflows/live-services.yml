@@ -49,8 +49,8 @@ jobs:
           TRAJECTO_LIVE: '1'
           # Site publicado (deve abrir sem login).
           TRAJECTO_PRODUCTION_URL: https://trajecto-psi.vercel.app
-          # Pôr a '1' depois de publicar em produção a Fase 6 (função /api/transit).
-          TRAJECTO_PRODUCTION_TRANSIT: '0'
+          # A função /api/transit (Fase 6) está publicada em produção desde 2026-10-16.
+          TRAJECTO_PRODUCTION_TRANSIT: '1'
 
       - name: Respostas recebidas
         if: always()
