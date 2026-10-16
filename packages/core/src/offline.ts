@@ -115,15 +115,20 @@ function tileRanges(bbox: BBox, minZoom: number, maxZoom: number): TileRange[] {
 }
 
 /**
- * Tamanho de um tile comprimido (gzip), por zoom, para estimar uma transferência. Medido em
- * 2026-10-16 com os tiles reais do OpenFreeMap (versão 20261011_080001_pt, workflow "Serviços
- * reais"): no zoom 14, média de 171 KB no centro de Lisboa (máximo 394 KB) e 60 KB em Évora; no
- * zoom 12, 64 KB e 25 KB. Usa-se o valor da cidade, para a estimativa não ficar abaixo do real.
+ * Tamanho de um tile comprimido (gzip), em KiB, por zoom, para estimar uma transferência. Medido
+ * em 2026-10-16 com os tiles reais do OpenFreeMap (versão 20261011_080001_pt, workflow "Serviços
+ * reais", um tile por zoom em Lisboa, Évora e Madrid e 3 × 3 tiles no zoom 14):
+ * - zoom 0–5: os tiles que cobrem a Península Ibérica (os mesmos nos três sítios; 1,7 MB no total,
+ *   que só se transferem na primeira zona);
+ * - zoom 6–13: o maior valor entre Lisboa e Évora, arredondado para cima;
+ * - zoom 14: a média no centro de Lisboa (171 KiB, máximo 394 KiB; Évora 60 KiB). No centro de
+ *   Madrid a média é 313 KiB: aí a estimativa fica abaixo do real e a transferência para nos 50 MB.
  */
+const TILE_KIB = [47, 109, 611, 543, 208, 153, 110, 110, 100, 100, 80, 70, 70, 70, 176] as const;
+
 export function estimatedTileBytes(zoom: number): number {
-  if (zoom >= 14) return 180_000;
-  if (zoom === 13) return 110_000;
-  return 70_000;
+  const index = Math.min(Math.max(Math.trunc(zoom), 0), TILE_KIB.length - 1);
+  return (TILE_KIB[index] ?? 0) * 1024;
 }
 
 /** Número de tiles de uma zona entre dois zooms (inclusive). */

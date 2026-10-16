@@ -65,12 +65,25 @@ describe('tiles', () => {
     expect(isTileInsideSupportedArea({ z: 14, x: 8298, y: 5637 })).toBe(false); // Paris
   });
 
-  it('estima o tamanho dos tiles por zoom (valores medidos na cidade)', () => {
-    expect(estimatedTileBytes(14)).toBe(180_000);
-    expect(estimatedTileBytes(13)).toBe(110_000);
-    expect(estimatedTileBytes(5)).toBe(70_000);
+  it('estima o tamanho dos tiles por zoom (valores medidos nos tiles reais)', () => {
+    expect(estimatedTileBytes(14)).toBe(176 * 1024);
+    expect(estimatedTileBytes(13)).toBe(70 * 1024);
+    expect(estimatedTileBytes(2)).toBe(611 * 1024);
+    expect(estimatedTileBytes(0)).toBe(47 * 1024);
+    // Fora do intervalo: o zoom mais próximo.
+    expect(estimatedTileBytes(15)).toBe(estimatedTileBytes(14));
+    expect(estimatedTileBytes(-1)).toBe(estimatedTileBytes(0));
     const oneTile: BBox = [-9.14, 38.737, -9.119, 38.754];
-    expect(estimateOfflineBytes(oneTile, 14, 14)).toBe(180_000);
+    expect(estimateOfflineBytes(oneTile, 14, 14)).toBe(176 * 1024);
+  });
+
+  it('acerta na zona pequena medida com o serviço real (orçamento da Fase 7)', () => {
+    // Baixa de Lisboa no zoom 16 num telemóvel: 15 tiles, 2,62 MB guardados (budget.md).
+    const baixa: BBox = [-9.1397, 38.7067, -9.1353, 38.7143];
+    expect(countTiles(baixa, 0, 14)).toBe(15);
+    const estimate = estimateOfflineBytes(baixa);
+    expect(estimate).toBeGreaterThan(2_500_000);
+    expect(estimate).toBeLessThan(2_800_000);
   });
 
   it('lê a versão dos tiles do TileJSON do OpenFreeMap', () => {
