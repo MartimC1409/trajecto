@@ -13,6 +13,7 @@ on:
       - 'packages/core/src/valhalla.ts'
       - 'packages/core/src/weather.ts'
       - 'packages/core/src/transit.ts'
+      - 'packages/core/src/offline.ts'
   schedule:
     # Uma vez por semana (segunda-feira, 05:23 UTC).
     - cron: '23 5 * * 1'
@@ -51,6 +52,8 @@ jobs:
           TRAJECTO_PRODUCTION_URL: https://trajecto-psi.vercel.app
           # A função /api/transit (Fase 6) está publicada em produção desde 2026-10-16.
           TRAJECTO_PRODUCTION_TRANSIT: '1'
+          # Pôr a '1' depois de publicar em produção a Fase 7 (função /api/offline-tile).
+          TRAJECTO_PRODUCTION_OFFLINE: '0'
 
       - name: Respostas recebidas
         if: always()

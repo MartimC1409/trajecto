@@ -21,3 +21,4 @@ export * from './reports';
 export * from './route-alerts';
 export * from './speed-cameras';
 export * from './transit';
+export * from './offline';

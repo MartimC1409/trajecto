@@ -15,7 +15,8 @@
  */
 
 const UPSTREAM = 'https://api.transitous.org/api/v6/plan';
-const USER_AGENT =
+/** User-Agent da app (o mesmo em todas as funções que falam com serviços externos). */
+export const USER_AGENT =
   'Trajecto/0.1.0 (+https://github.com/MartimC1409/trajecto; https://trajecto-psi.vercel.app)';
 const TIMEOUT_MS = 25_000;
 const MAX_RESPONSE_BYTES = 5_000_000;

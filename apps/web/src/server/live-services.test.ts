@@ -14,11 +14,14 @@ import {
   createTransitPlanner,
   createValhallaRouter,
   createWeatherProvider,
+  lngLatToTile,
+  openFreeMapVersion,
   parseSpeedCameras,
   parseTransitResponse,
   parseValhallaResponse,
 } from '@trajecto/core';
 import { describe, expect, it } from 'vitest';
+import { handleOfflineTileRequest } from '../../api/offline-tile';
 import { handleRouteRequest } from '../../api/route';
 import { handleTransitRequest } from '../../api/transit';
 import { handleWeatherRequest } from '../../api/weather';
@@ -28,6 +31,8 @@ const LIVE = process.env.TRAJECTO_LIVE === '1';
 const PRODUCTION = process.env.TRAJECTO_PRODUCTION_URL ?? '';
 /** A função /api/transit já está publicada em produção (ver live-services.yml). */
 const PRODUCTION_TRANSIT = process.env.TRAJECTO_PRODUCTION_TRANSIT === '1';
+/** A função /api/offline-tile (Fase 7) já está publicada em produção (ver live-services.yml). */
+const PRODUCTION_OFFLINE = process.env.TRAJECTO_PRODUCTION_OFFLINE === '1';
 const OUTPUT = new URL('../../live-output/', import.meta.url);
 
 const LISBOA: LngLat = { lng: -9.1393, lat: 38.7223 };
@@ -128,6 +133,47 @@ describe.skipIf(!LIVE)('serviços reais', () => {
     }
   }, 90_000);
 
+  it('mapas offline: tamanho real dos tiles (cidade e campo), pelo OpenFreeMap', async () => {
+    const tileJson = (await (await fetch('https://tiles.openfreemap.org/planet')).json()) as {
+      tiles?: string[];
+    };
+    const version = openFreeMapVersion(tileJson.tiles?.[0] ?? '') ?? 'latest';
+    const samples: [string, LngLat][] = [
+      ['lisboa-baixa', { lng: -9.1393, lat: 38.7107 }],
+      ['alentejo-evora', { lng: -7.9086, lat: 38.5714 }],
+    ];
+    const report: Record<string, unknown> = { version };
+    for (const [name, point] of samples) {
+      const sizes: number[] = [];
+      // 3 × 3 tiles no zoom 14 e o tile do zoom 12: poucos pedidos, um de cada vez.
+      const center = lngLatToTile(point, 14);
+      const tiles = [
+        ...[-1, 0, 1].flatMap((dx) =>
+          [-1, 0, 1].map((dy) => ({ z: 14, x: center.x + dx, y: center.y + dy })),
+        ),
+        { z: 12, ...lngLatToTile(point, 12) },
+      ];
+      for (const tile of tiles) {
+        const response = await handleOfflineTileRequest(
+          new Request(
+            `https://trajecto.example/api/offline-tile?v=${version}&z=${String(tile.z)}&x=${String(tile.x)}&y=${String(tile.y)}`,
+          ),
+        );
+        expect([200, 204]).toContain(response.status);
+        sizes.push(Number(response.headers.get('x-tile-bytes')));
+        await response.body?.cancel();
+      }
+      const z14 = sizes.slice(0, 9);
+      const average = z14.reduce((a, b) => a + b, 0) / z14.length;
+      report[name] = { z14: z14, z12: sizes[9], averageZ14: Math.round(average) };
+      console.warn(
+        `mapas offline ${name}: versão ${version}; zoom 14 média ${String(Math.round(average / 1024))} KB (máx. ${String(Math.round(Math.max(...z14) / 1024))} KB), zoom 12 ${String(Math.round((sizes[9] ?? 0) / 1024))} KB`,
+      );
+      expect(average).toBeGreaterThan(0);
+    }
+    await save('offline-tiles.json', report);
+  }, 90_000);
+
   it('transportes: Lisboa (metro) e Porto, pelo Transitous', async () => {
     const { fetchImpl, last } = throughHandler((r) => handleTransitRequest(r));
     const planner = createTransitPlanner({ url: '/api/transit', fetch: fetchImpl });
@@ -217,6 +263,20 @@ describe.skipIf(!LIVE || !PRODUCTION)('produção', () => {
     const forecasts = await weather.forecast([LISBOA, PORTO]);
     expect(forecasts).toHaveLength(2);
   }, 60_000);
+
+  it.skipIf(!PRODUCTION_OFFLINE)(
+    'mapas offline: um tile de Lisboa através da função do Vercel',
+    async () => {
+      const response = await fetch(at('/api/offline-tile?v=latest&z=14&x=7776&y=6277'));
+      console.warn(
+        `produção mapas offline: HTTP ${String(response.status)}, ${String(response.headers.get('x-tile-bytes'))} bytes`,
+      );
+      expect(response.status).toBe(200);
+      expect(Number(response.headers.get('x-tile-bytes'))).toBeGreaterThan(0);
+      expect((await response.arrayBuffer()).byteLength).toBeGreaterThan(0);
+    },
+    30_000,
+  );
 
   it.skipIf(!PRODUCTION_TRANSIT)(
     'transportes públicos através da função do Vercel (Transitous)',
