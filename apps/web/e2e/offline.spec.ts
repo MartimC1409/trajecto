@@ -14,6 +14,8 @@ test.use({ serviceWorkers: 'allow' });
 const CENTER = { lng: -9.1365, lat: 38.7107 };
 /** Zona à volta do centro, maior do que o ecrã no zoom 16 (telemóvel e computador). */
 const AREA: [number, number, number, number] = [-9.155, 38.699, -9.118, 38.722];
+/** Tile do zoom 14 no centro da vista. */
+const CENTER_TILE = '14/7776/6278';
 
 function tileOf(lng: number, lat: number, z: number): [number, number] {
   const n = 2 ** z;
@@ -63,6 +65,25 @@ async function saveAreaDirectly(page: Page) {
     },
     { tiles: keys, bbox: AREA },
   );
+}
+
+/** Lê um tile guardado como a app o lê (para diagnóstico quando o mapa falha). */
+async function readStoredTile(page: Page, key: string) {
+  return page.evaluate(async (tileKey) => {
+    try {
+      const cache = await caches.open('trajecto-offline-tiles-v1');
+      const response = await cache.match(`${location.origin}/__offline/tiles/${tileKey}`);
+      if (!response) return { found: false, keys: (await cache.keys()).length };
+      const body = await response.arrayBuffer();
+      return {
+        found: true,
+        bytes: body.byteLength,
+        encoding: response.headers.get('x-trajecto-encoding'),
+      };
+    } catch (error) {
+      return { error: String(error) };
+    }
+  }, key);
 }
 
 test.describe('Trajecto (Fase 7: sem rede)', () => {
@@ -117,6 +138,7 @@ test.describe('Trajecto (Fase 7: sem rede)', () => {
       if (message.type() === 'warning') warnings.push(message.text());
     });
     const failedRequests: string[] = [];
+    const diagnostics: [string, unknown][] = [];
     page.on('requestfailed', (request) => failedRequests.push(request.url()));
 
     await page.goto('/');
@@ -134,7 +156,9 @@ test.describe('Trajecto (Fase 7: sem rede)', () => {
       // worker: a transferência iria aos serviços reais. A transferência é testada no Chromium;
       // aqui a zona é posta diretamente no armazenamento, como a app a deixa.
       await saveAreaDirectly(page);
+      diagnostics.push(['guardado', await readStoredTile(page, CENTER_TILE)]);
       await page.reload();
+      diagnostics.push(['recarregado', await readStoredTile(page, CENTER_TILE)]);
       await page.getByRole('button', { name: 'Abrir menu' }).click();
     } else {
       await section.getByRole('button', { name: 'Guardar esta zona' }).click();
@@ -161,10 +185,11 @@ test.describe('Trajecto (Fase 7: sem rede)', () => {
     await expect(page.getByText(/Sem rede: o mapa mostra só as zonas guardadas/u)).toBeVisible();
     await expect(page.locator('canvas.maplibregl-canvas')).toBeVisible();
     await page.waitForTimeout(1500);
+    diagnostics.push(['sem rede', await readStoredTile(page, CENTER_TILE)]);
     // Nenhum recurso do mapa falhou: TileJSON, tiles e tipos de letra vieram do dispositivo.
     expect(
       warnings.filter((w) => w.includes('[mapa]')),
-      `Pedidos falhados: ${JSON.stringify(failedRequests)}`,
+      `Pedidos falhados: ${JSON.stringify(failedRequests)}; tile guardado: ${JSON.stringify(diagnostics)}`,
     ).toEqual([]);
     await page.getByRole('button', { name: 'Abrir menu' }).click();
     await expect(
