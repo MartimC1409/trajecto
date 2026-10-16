@@ -327,6 +327,8 @@ export const en: Messages = {
     recenter: 'Re-centre',
     rerouting: 'Recalculating route…',
     rerouteFailed: 'Could not recalculate the route. Trying again.',
+    rerouteOffline:
+      'No connection: the route can’t be recalculated. Return to the route or wait for a connection.',
     offRoute: 'Off route',
     arrived: 'You have arrived.',
     starting: 'Starting navigation.',

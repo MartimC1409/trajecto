@@ -332,6 +332,7 @@ export const ptPT = {
     recenter: 'Recentrar',
     rerouting: 'A recalcular a rota…',
     rerouteFailed: 'Não foi possível recalcular a rota. Vou tentar de novo.',
+    rerouteOffline: 'Sem rede: não dá para recalcular a rota. Volta à rota ou espera pela rede.',
     offRoute: 'Fora da rota',
     arrived: 'Chegaste ao destino.',
     starting: 'A iniciar a navegação.',

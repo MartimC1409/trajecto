@@ -35,8 +35,10 @@ export interface NavigationTarget {
 /**
  * Aviso a mostrar durante a navegação. `gps_weak`: as posições recebidas são demasiado imprecisas
  * para seguir a rota (por exemplo, dentro de casa); a navegação continua quando o sinal melhorar.
+ * `reroute_offline`: fora da rota e sem rede; a rota só é recalculada quando a rede voltar.
  */
-export type NavigationNotice = 'reroute_failed' | 'gps_denied' | 'gps_error' | 'gps_weak' | null;
+export type NavigationNotice =
+  'reroute_failed' | 'reroute_offline' | 'gps_denied' | 'gps_error' | 'gps_weak' | null;
 
 export interface NavigationState {
   readonly route: Route;
@@ -68,6 +70,10 @@ export interface NavigationSessionDeps {
   readonly formatAlert: (meters: number, instruction: string) => string;
   /** Frase dita ao recalcular a rota (na língua atual). */
   readonly reroutingMessage: () => string;
+  /** Frase dita (uma vez) ao sair da rota sem rede. */
+  readonly offlineMessage?: () => string;
+  /** Se há rede (por omissão, o que o browser indica). */
+  readonly isOnline?: () => boolean;
   /** Frase dita ao aproximar-se de um aviso, por exemplo "Polícia reportada daqui a 400 metros." */
   readonly alertMessage?: (kind: string, meters: number, detail?: number) => string;
   readonly onChange: (state: NavigationState | null) => void;
@@ -104,8 +110,18 @@ export function alertSpeakDistance(mode: TravelMode, speed: number): number {
   return Math.min(1500, Math.max(300, speed * 25));
 }
 
+function isRerouteNotice(notice: NavigationNotice): boolean {
+  return notice === 'reroute_failed' || notice === 'reroute_offline';
+}
+
+/** O que o browser indica; sem essa informação conta como com rede. */
+function browserOnline(): boolean {
+  return (globalThis.navigator as { onLine?: boolean } | undefined)?.onLine ?? true;
+}
+
 export function createNavigationSession(deps: NavigationSessionDeps): NavigationSession {
   const tickMs = deps.simulationTickMs ?? 1000;
+  const isOnline = deps.isOnline ?? browserOnline;
   let state: NavigationState | null = null;
   let navigator: Navigator | null = null;
   let target: NavigationTarget | null = null;
@@ -193,7 +209,7 @@ export function createNavigationSession(deps: NavigationSessionDeps): Navigation
       // silêncio. Antes da primeira posição boa, mostra no mapa onde o GPS acha que estás.
       if (isValidLngLat(fix.lngLat)) {
         patch({
-          notice: state.notice === 'reroute_failed' ? state.notice : 'gps_weak',
+          notice: isRerouteNotice(state.notice) ? state.notice : 'gps_weak',
           gpsAccuracy: accuracy,
           ...(state.snapshot === null
             ? { position: { lngLat: fix.lngLat, bearing: state.position?.bearing ?? 0 } }
@@ -246,8 +262,8 @@ export function createNavigationSession(deps: NavigationSessionDeps): Navigation
       position: onRoute
         ? { lngLat: snapshot.snapped, bearing: snapshot.bearing }
         : { lngLat: fix.lngLat, bearing: gpsBearing },
-      // O aviso de recálculo falhado mantém-se enquanto estiver fora da rota.
-      notice: !onRoute && state.notice === 'reroute_failed' ? state.notice : null,
+      // O aviso de recálculo falhado (ou sem rede) mantém-se enquanto estiver fora da rota.
+      notice: !onRoute && isRerouteNotice(state.notice) ? state.notice : null,
     });
     if (texts.length > 0) deps.speak(texts);
     if (snapshot.status === 'arrived') {
@@ -255,8 +271,16 @@ export function createNavigationSession(deps: NavigationSessionDeps): Navigation
       return;
     }
     if (snapshot.status === 'off_route' && fix.timestamp - lastRerouteAt >= REROUTE_COOLDOWN_MS) {
-      lastRerouteAt = fix.timestamp;
-      void reroute(fix, snapshot.legIndex);
+      if (isOnline()) {
+        lastRerouteAt = fix.timestamp;
+        void reroute(fix, snapshot.legIndex);
+      } else if (state.notice !== 'reroute_offline') {
+        // Sem rede não há recálculo (o servidor de rotas é remoto): avisa uma vez e continua a
+        // mostrar a rota calculada. Com a rede de volta, a posição seguinte recalcula logo.
+        patch({ notice: 'reroute_offline' });
+        const message = deps.offlineMessage?.();
+        if (message) deps.speak([message]);
+      }
     }
   }
 

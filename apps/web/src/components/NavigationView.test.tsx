@@ -106,6 +106,7 @@ describe('NavigationView', () => {
   it.each([
     [{ rerouting: true }, 'A recalcular a rota…'],
     [{ notice: 'reroute_failed' as const }, 'Não foi possível recalcular a rota'],
+    [{ notice: 'reroute_offline' as const }, 'Sem rede: não dá para recalcular a rota'],
     [{ notice: 'gps_denied' as const }, 'Sem acesso à localização'],
     [{ notice: 'gps_error' as const }, 'Sem sinal de GPS.'],
     [{ notice: 'gps_weak' as const, gpsAccuracy: 150 }, 'Sinal de GPS fraco (precisão de ±150 m)'],
