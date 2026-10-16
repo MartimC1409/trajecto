@@ -33,11 +33,16 @@ e a PWA a funcionar sem rede nessas zonas. Os tiles vêm do OpenFreeMap; o relev
    do zoom 0 ao 14 (o máximo do OpenFreeMap; acima disso o mapa amplia) da zona visível, cortada à
    área suportada (Portugal, Espanha, ilhas, Canárias). Até 20 zonas.
 2. **Limites dos termos cumpridos antes e durante a transferência.** Antes: a zona tem de ter no
-   máximo 3000 tiles e uma estimativa até 50 MB. A estimativa usa tamanhos medidos nos tiles reais
-   (zoom 14: média de 171 KB comprimidos no centro de Lisboa e 60 KB em Évora; zoom 12: 64 KB e
-   25 KB), com valores de cidade para não ficar abaixo do real. Numa cidade, uma zona chega a
-   cerca de 25 km × 25 km. Durante: no máximo 4 pedidos em paralelo; a transferência para ao chegar
-   aos 50 MB (uma continuação conta com o que a zona já tinha).
+   máximo 3000 tiles e uma estimativa até 50 MB. A estimativa usa uma tabela por zoom medida nos
+   tiles reais (Lisboa, Évora e Madrid, um tile por zoom e 3 × 3 tiles no zoom 14):
+   - zoom 0 a 5: os tiles que cobrem a Península (1,7 MB no total, os mesmos em qualquer zona);
+   - zoom 6 a 13: o maior valor entre Lisboa e Évora;
+   - zoom 14: a média do centro de Lisboa (171 KiB comprimidos; Évora 60 KiB; Madrid 313 KiB).
+
+   Numa cidade portuguesa, uma zona chega a cerca de 25 km × 25 km. No centro de Madrid, a
+   estimativa fica abaixo do real e a transferência pode parar nos 50 MB (a zona fica marcada como
+   incompleta). Durante: no máximo 4 pedidos em paralelo; a transferência para ao chegar aos 50 MB
+   (uma continuação conta com o que a zona já tinha).
 3. **Pedidos pela função própria `/api/offline-tile`.** Os browsers não deixam a página mudar o
    User-Agent, que os termos exigem. A função:
    - aceita só `v` (versão dos tiles, `\d{8}_\d{6}_pt`, ou `latest`), `z` (0–14), `x` e `y`;
@@ -93,8 +98,14 @@ e a PWA a funcionar sem rede nessas zonas. Os tiles vêm do OpenFreeMap; o relev
   função `/api/offline-tile`, armazenamento, transferência (paralelismo, limite de bytes, 429,
   falhas, cancelamento, espaço cheio), protocolo do mapa, service worker (instalação, ativação,
   página sem rede, rede lenta, o que não interceta), plugin da build e a secção do menu.
-- Teste ponta a ponta (Chromium; WebKit no CI): guardar a zona visível, desligar a rede (sem
-  respostas simuladas), recarregar: a app abre, o aviso "Sem rede" aparece e o mapa carrega sem
-  nenhuma falha. Controlo: sem zona guardada, a mesma situação dá 14 falhas de tiles.
+- Teste ponta a ponta: guardar a zona visível, desligar a rede (sem respostas simuladas),
+  recarregar. A app abre, o aviso "Sem rede" aparece e o mapa carrega sem nenhuma falha. Controlo:
+  sem zona guardada, a mesma situação dá 14 falhas de tiles. No Chromium, a zona é transferida pela
+  interface; no WebKit (Safari), o Playwright não interceta os pedidos de páginas com service
+  worker, por isso a zona é escrita diretamente no armazenamento, como a app a deixa.
+- Teste ponta a ponta (Chromium): o Chrome não indica nenhum erro de instalação da PWA
+  (`Page.getInstallabilityErrors`; controlo com um manifesto incompleto: 4 erros).
+- Orçamento (workflow "Mapa à vista", serviços reais): a zona pequena da Baixa foi estimada em
+  2,6 MB e guardou 2,62 MB; antes da tabela por zoom, a estimativa era de 1,2 MB.
 - Serviço real (workflow "Serviços reais", 2026-10-16): tiles de Lisboa e de Évora pela função,
   com os tamanhos indicados acima.

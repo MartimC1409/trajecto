@@ -3,11 +3,26 @@
 Aplicação pessoal de mapas e navegação para Portugal, em português europeu.
 É uma aplicação web instalável no telemóvel (PWA).
 
-> **Estado: Fase 6 concluída, a aguardar validação no telemóvel.** Já há mapa, pesquisa,
-> favoritos, rotas, navegação com voz, meteorologia na rota, reportes, radares fixos e
-> transportes públicos ([plano](docs/fase-0-planeamento.md), [Fases 2 e 3](docs/fase-2-3/verificacao.md),
-> [Fase 4](docs/fase-4/verificacao.md), [Fase 5](docs/fase-5/verificacao.md),
-> [Fase 6](docs/fase-6/verificacao.md)).
+> **Estado: Fase 7 concluída, a aguardar publicação e validação no telemóvel.** Já há mapa,
+> pesquisa, favoritos, rotas, navegação com voz, meteorologia na rota, reportes, radares fixos,
+> transportes públicos e mapas sem rede ([plano](docs/fase-0-planeamento.md),
+> [Fases 2 e 3](docs/fase-2-3/verificacao.md), [Fase 4](docs/fase-4/verificacao.md),
+> [Fase 5](docs/fase-5/verificacao.md), [Fase 6](docs/fase-6/verificacao.md),
+> [Fase 7](docs/fase-7/verificacao.md)).
+
+## Mapas sem rede e instalação (Fase 7)
+
+- **Instalar no telemóvel:** iPhone (Safari → Partilhar → Adicionar ao ecrã principal) e Android
+  (Chrome → Instalar app). Guia: [instalar e usar sem rede](docs/fase-7/instalar.md).
+- **Mapas offline:** menu → "Mapas offline" → "Guardar esta zona" (até 50 MB e 3000 tiles por
+  zona, limites dos termos do OpenFreeMap; até 20 zonas). Sem rede, a app abre e mostra as zonas
+  guardadas; com rede, essas zonas também vêm do dispositivo, para poupar dados
+  ([ADR 0016](docs/adr/0016-mapas-offline.md)).
+- **Navegar sem rede:** continua com a rota já calculada; fora da rota, a app avisa e recalcula
+  quando a rede voltar. Não há cálculo de rotas no dispositivo
+  ([ADR 0017](docs/adr/0017-rotas-sem-rede.md)).
+- **Dados e bateria medidos** ([orçamento](docs/fase-7/orcamento.md)) e **revisão de segurança**
+  OWASP ([relatório](docs/fase-7/seguranca.md)).
 
 ## Transportes públicos (Fase 6)
 
@@ -104,7 +119,7 @@ ficheiro: as variáveis `VITE_*` ficam visíveis no browser.
 
 | Serviço | Para quê | Limites e termos |
 |---|---|---|
-| [OpenFreeMap](https://openfreemap.org) | Tiles do mapa | Gratuito e sem chave; atribuição obrigatória; **sem garantia de disponibilidade (SLA)** |
+| [OpenFreeMap](https://openfreemap.org) | Tiles do mapa | Gratuito e sem chave; atribuição obrigatória; **sem garantia de disponibilidade (SLA)**. Mapas offline: no máximo 3000 tiles ou 50 MB por transferência, 4 pedidos em paralelo e User-Agent próprio (pela função `/api/offline-tile`) |
 | [Photon (komoot)](https://photon.komoot.io) | Pesquisa e moradas | Servidor público para uso "num limite razoável". Uso intensivo é limitado ou bloqueado e não há garantias. Por isso a app espera 300 ms depois de escreveres (*debounce*), exige 3 letras, guarda resultados em cache e cancela pedidos antigos |
 | [Valhalla (FOSSGIS)](https://valhalla1.openstreetmap.de) | Rotas | Servidor público, uso justo (1 pedido por segundo), sem garantias; passa pela função `/api/route` |
 | [Open-Meteo](https://open-meteo.com) | Meteorologia na rota | Gratuito só para uso não comercial, < 10 000 pedidos/dia; CC BY 4.0; passa pela função `/api/weather` |
@@ -113,7 +128,7 @@ ficheiro: as variáveis `VITE_*` ficam visíveis no browser.
 | [Transitous](https://transitous.org) | Transportes públicos | Comunitário, sem garantias; só para projetos de código aberto não comerciais; 20 pedidos de rotas por minuto por IP; guarda IP, URL e User-Agent 2 dias; passa pela função `/api/transit` |
 
 Estes serviços recebem o teu endereço IP, o que pesquisas e as zonas do mapa que vês.
-Os teus favoritos, histórico e definições **nunca saem do dispositivo**.
+Os teus favoritos, histórico, definições e mapas guardados **nunca saem do dispositivo**.
 
 ## Atribuições e licenças de dados
 
@@ -141,5 +156,8 @@ Os teus favoritos, histórico e definições **nunca saem do dispositivo**.
 - [Decisões de arquitetura (ADR)](docs/adr/README.md)
 - [Guia de instalação no Windows](docs/fase-1/guia-instalacao-windows.md)
 - [Publicar no Vercel para testar no iPhone](docs/fase-1/deploy-vercel.md)
+- [Instalar no telemóvel e usar sem rede](docs/fase-7/instalar.md)
 - Verificações: [Fases 2 e 3](docs/fase-2-3/verificacao.md), [Fase 4](docs/fase-4/verificacao.md),
-  [Fase 5](docs/fase-5/verificacao.md), [Fase 6](docs/fase-6/verificacao.md)
+  [Fase 5](docs/fase-5/verificacao.md), [Fase 6](docs/fase-6/verificacao.md),
+  [Fase 7](docs/fase-7/verificacao.md) (com o [orçamento de dados e bateria](docs/fase-7/orcamento.md)
+  e a [revisão de segurança](docs/fase-7/seguranca.md))
