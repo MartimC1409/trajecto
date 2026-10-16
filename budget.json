@@ -1,0 +1,108 @@
+{
+  "baseUrl": "http://127.0.0.1:4173",
+  "date": "2026-10-16T21:00:19.428Z",
+  "errors": {},
+  "app": {
+    "files": 11,
+    "raw": 2290421,
+    "gzip": 653192
+  },
+  "openMap": {
+    "first": {
+      "bytes": {
+        "app": 473215,
+        "tiles": 598131,
+        "relief": 425036,
+        "fonts": 136929
+      },
+      "requests": {
+        "app": 4,
+        "tiles": 7,
+        "relief": 6,
+        "fonts": 3
+      }
+    },
+    "again": {
+      "bytes": {
+        "app": 0,
+        "tiles": 0,
+        "relief": 0
+      },
+      "requests": {
+        "app": 4,
+        "tiles": 7,
+        "relief": 6
+      }
+    }
+  },
+  "navigationWithRelief": {
+    "relief": true,
+    "savedZone": null,
+    "elapsedSeconds": 120,
+    "drivingMinutes": 8.000133333333332,
+    "arrived": false,
+    "travelledKm": 2.6,
+    "mainThreadBusy": 0.07961588140197665,
+    "bytes": {
+      "tiles": 1656507,
+      "relief": 194986,
+      "fonts": 23959
+    },
+    "requests": {
+      "tiles": 50,
+      "relief": 2,
+      "fonts": 1
+    }
+  },
+  "navigationWithoutRelief": {
+    "relief": false,
+    "savedZone": null,
+    "elapsedSeconds": 120,
+    "drivingMinutes": 8.000133333333332,
+    "arrived": false,
+    "travelledKm": 2.6,
+    "mainThreadBusy": 0.10422491291811803,
+    "bytes": {
+      "tiles": 1438804,
+      "fonts": 23960
+    },
+    "requests": {
+      "tiles": 44,
+      "fonts": 1
+    }
+  },
+  "navigationWithSavedZone": {
+    "relief": true,
+    "savedZone": {
+      "estimate": "Zona no ecrã: cerca de 9,5 MB.",
+      "message": "«Lisboa» está guardada: o mapa desta zona funciona sem rede.",
+      "tiles": 63,
+      "storedBytes": 7255588
+    },
+    "elapsedSeconds": 120,
+    "drivingMinutes": 8.002666666666666,
+    "arrived": false,
+    "travelledKm": 2.6,
+    "mainThreadBusy": 0.07500067477507497,
+    "bytes": {
+      "relief": 0
+    },
+    "requests": {
+      "relief": 1
+    }
+  },
+  "offlineArea": {
+    "estimate": "Zona no ecrã: cerca de 2,6 MB.",
+    "message": "«Lisboa» está guardada: o mapa desta zona funciona sem rede.",
+    "tiles": 15,
+    "storedBytes": 2621458,
+    "bytes": {
+      "api": 2626862,
+      "fonts": 251640
+    },
+    "requests": {
+      "api": 16,
+      "fonts": 6
+    }
+  }
+}

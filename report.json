@@ -1,0 +1,256 @@
+{
+  "baseUrl": "http://127.0.0.1:4173",
+  "results": [
+    {
+      "browser": "chromium",
+      "place": "baixa-claro",
+      "console": [
+        "[.WebGL-0x734001eae00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels",
+        "[.WebGL-0x734001eae00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels",
+        "[.WebGL-0x734001eae00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels",
+        "[.WebGL-0x734001eae00]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels (this message will no longer repeat)"
+      ],
+      "csp": [],
+      "tiles": {
+        "tiles.openfreemap.org": {
+          "count": 10,
+          "statuses": {
+            "200": 10
+          },
+          "cors": "*"
+        },
+        "tiles.mapterhorn.com": {
+          "count": 2,
+          "statuses": {
+            "200": 2
+          },
+          "cors": "*"
+        }
+      }
+    },
+    {
+      "browser": "chromium",
+      "place": "baixa-escuro",
+      "console": [],
+      "csp": [],
+      "tiles": {
+        "tiles.openfreemap.org": {
+          "count": 10,
+          "statuses": {
+            "200": 10
+          },
+          "cors": "*"
+        },
+        "tiles.mapterhorn.com": {
+          "count": 2,
+          "statuses": {
+            "200": 2
+          },
+          "cors": "*"
+        }
+      }
+    },
+    {
+      "browser": "chromium",
+      "place": "rossio-z17",
+      "console": [],
+      "csp": [],
+      "tiles": {
+        "tiles.openfreemap.org": {
+          "count": 10,
+          "statuses": {
+            "200": 10
+          },
+          "cors": "*"
+        },
+        "tiles.mapterhorn.com": {
+          "count": 2,
+          "statuses": {
+            "200": 2
+          },
+          "cors": "*"
+        }
+      }
+    },
+    {
+      "browser": "chromium",
+      "place": "ponte-25-abril",
+      "console": [],
+      "csp": [],
+      "tiles": {
+        "tiles.openfreemap.org": {
+          "count": 14,
+          "statuses": {
+            "200": 14
+          },
+          "cors": "*"
+        },
+        "tiles.mapterhorn.com": {
+          "count": 2,
+          "statuses": {
+            "200": 2
+          },
+          "cors": "*"
+        }
+      }
+    },
+    {
+      "browser": "chromium",
+      "place": "autoestradas-lisboa",
+      "console": [],
+      "csp": [],
+      "tiles": {
+        "tiles.openfreemap.org": {
+          "count": 8,
+          "statuses": {
+            "200": 8
+          },
+          "cors": "*"
+        },
+        "tiles.mapterhorn.com": {
+          "count": 12,
+          "statuses": {
+            "200": 12
+          },
+          "cors": "*"
+        }
+      }
+    },
+    {
+      "browser": "chromium",
+      "place": "serra-da-estrela",
+      "console": [],
+      "csp": [],
+      "tiles": {
+        "tiles.openfreemap.org": {
+          "count": 10,
+          "statuses": {
+            "200": 10
+          },
+          "cors": "*"
+        },
+        "tiles.mapterhorn.com": {
+          "count": 6,
+          "statuses": {
+            "200": 6
+          },
+          "cors": "*"
+        }
+      }
+    },
+    {
+      "browser": "chromium",
+      "place": "serra-da-estrela-escuro",
+      "console": [],
+      "csp": [],
+      "tiles": {
+        "tiles.openfreemap.org": {
+          "count": 10,
+          "statuses": {
+            "200": 10
+          },
+          "cors": "*"
+        },
+        "tiles.mapterhorn.com": {
+          "count": 6,
+          "statuses": {
+            "200": 6
+          },
+          "cors": "*"
+        }
+      }
+    },
+    {
+      "browser": "chromium",
+      "place": "porto-ribeira",
+      "console": [],
+      "csp": [],
+      "tiles": {
+        "tiles.openfreemap.org": {
+          "count": 11,
+          "statuses": {
+            "200": 11
+          },
+          "cors": "*"
+        },
+        "tiles.mapterhorn.com": {
+          "count": 2,
+          "statuses": {
+            "200": 2
+          },
+          "cors": "*"
+        }
+      }
+    },
+    {
+      "browser": "chromium",
+      "place": "funchal",
+      "console": [],
+      "csp": [],
+      "tiles": {
+        "tiles.openfreemap.org": {
+          "count": 10,
+          "statuses": {
+            "200": 10
+          },
+          "cors": "*"
+        },
+        "tiles.mapterhorn.com": {
+          "count": 6,
+          "statuses": {
+            "200": 6
+          },
+          "cors": "*"
+        }
+      }
+    },
+    {
+      "browser": "iphone",
+      "place": "baixa-claro",
+      "console": [
+        "Refused to apply a stylesheet because its hash, its nonce, or 'unsafe-inline' does not appear in the style-src directive of the Content Security Policy."
+      ],
+      "csp": [],
+      "tiles": {
+        "tiles.openfreemap.org": {
+          "count": 6,
+          "statuses": {
+            "200": 6
+          },
+          "cors": "*"
+        },
+        "tiles.mapterhorn.com": {
+          "count": 1,
+          "statuses": {
+            "200": 1
+          },
+          "cors": "*"
+        }
+      }
+    },
+    {
+      "browser": "iphone",
+      "place": "serra-da-estrela",
+      "console": [
+        "Refused to apply a stylesheet because its hash, its nonce, or 'unsafe-inline' does not appear in the style-src directive of the Content Security Policy."
+      ],
+      "csp": [],
+      "tiles": {
+        "tiles.openfreemap.org": {
+          "count": 8,
+          "statuses": {
+            "200": 8
+          },
+          "cors": "*"
+        },
+        "tiles.mapterhorn.com": {
+          "count": 4,
+          "statuses": {
+            "200": 4
+          },
+          "cors": "*"
+        }
+      }
+    }
+  ]
+}
