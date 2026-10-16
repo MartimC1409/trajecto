@@ -141,17 +141,18 @@ describe.skipIf(!LIVE)('serviços reais', () => {
     const samples: [string, LngLat][] = [
       ['lisboa-baixa', { lng: -9.1393, lat: 38.7107 }],
       ['alentejo-evora', { lng: -7.9086, lat: 38.5714 }],
+      ['madrid-sol', { lng: -3.7038, lat: 40.4168 }],
     ];
     const report: Record<string, unknown> = { version };
     for (const [name, point] of samples) {
       const sizes: number[] = [];
-      // 3 × 3 tiles no zoom 14 e o tile do zoom 12: poucos pedidos, um de cada vez.
+      // 3 × 3 tiles no zoom 14 e o tile de cada zoom do 0 ao 13: poucos pedidos, um de cada vez.
       const center = lngLatToTile(point, 14);
       const tiles = [
         ...[-1, 0, 1].flatMap((dx) =>
           [-1, 0, 1].map((dy) => ({ z: 14, x: center.x + dx, y: center.y + dy })),
         ),
-        { z: 12, ...lngLatToTile(point, 12) },
+        ...Array.from({ length: 14 }, (_, z) => ({ z, ...lngLatToTile(point, z) })),
       ];
       for (const tile of tiles) {
         const response = await handleOfflineTileRequest(
@@ -165,15 +166,17 @@ describe.skipIf(!LIVE)('serviços reais', () => {
         await response.body?.cancel();
       }
       const z14 = sizes.slice(0, 9);
+      const byZoom = sizes.slice(9);
       const average = z14.reduce((a, b) => a + b, 0) / z14.length;
-      report[name] = { z14: z14, z12: sizes[9], averageZ14: Math.round(average) };
+      report[name] = { z14, byZoom, averageZ14: Math.round(average) };
+      const kb = (bytes: number) => String(Math.round(bytes / 1024));
       console.warn(
-        `mapas offline ${name}: versão ${version}; zoom 14 média ${String(Math.round(average / 1024))} KB (máx. ${String(Math.round(Math.max(...z14) / 1024))} KB), zoom 12 ${String(Math.round((sizes[9] ?? 0) / 1024))} KB`,
+        `mapas offline ${name}: versão ${version}; zoom 14 média ${kb(average)} KB (máx. ${kb(Math.max(...z14))} KB); zoom 0–13 (KB): ${byZoom.map(kb).join(' ')}`,
       );
       expect(average).toBeGreaterThan(0);
     }
     await save('offline-tiles.json', report);
-  }, 90_000);
+  }, 180_000);
 
   it('transportes: Lisboa (metro) e Porto, pelo Transitous', async () => {
     const { fetchImpl, last } = throughHandler((r) => handleTransitRequest(r));
