@@ -114,6 +114,18 @@ function tileRanges(bbox: BBox, minZoom: number, maxZoom: number): TileRange[] {
   return ranges;
 }
 
+/**
+ * Tamanho de um tile comprimido (gzip), por zoom, para estimar uma transferência. Medido em
+ * 2026-10-16 com os tiles reais do OpenFreeMap (versão 20261011_080001_pt, workflow "Serviços
+ * reais"): no zoom 14, média de 171 KB no centro de Lisboa (máximo 394 KB) e 60 KB em Évora; no
+ * zoom 12, 64 KB e 25 KB. Usa-se o valor da cidade, para a estimativa não ficar abaixo do real.
+ */
+export function estimatedTileBytes(zoom: number): number {
+  if (zoom >= 14) return 180_000;
+  if (zoom === 13) return 110_000;
+  return 70_000;
+}
+
 /** Número de tiles de uma zona entre dois zooms (inclusive). */
 export function countTiles(
   bbox: BBox,
@@ -147,25 +159,43 @@ export function openFreeMapVersion(tileUrlTemplate: string): string | null {
   return match?.[1] ?? null;
 }
 
+/** Bytes estimados de uma zona (comprimidos, como são transferidos e guardados). */
+export function estimateOfflineBytes(
+  bbox: BBox,
+  minZoom = OFFLINE_MIN_ZOOM,
+  maxZoom = OFFLINE_MAX_ZOOM,
+): number {
+  return tileRanges(bbox, minZoom, maxZoom).reduce(
+    (sum, r) => sum + (r.maxX - r.minX + 1) * (r.maxY - r.minY + 1) * estimatedTileBytes(r.z),
+    0,
+  );
+}
+
 export type OfflineAreaCheck =
-  | { readonly ok: true; readonly bbox: BBox; readonly tiles: number }
+  | {
+      readonly ok: true;
+      readonly bbox: BBox;
+      readonly tiles: number;
+      readonly estimatedBytes: number;
+    }
   | {
       readonly ok: false;
-      readonly reason: 'invalid' | 'outside_area' | 'too_many_tiles';
+      readonly reason: 'invalid' | 'outside_area' | 'too_many_tiles' | 'too_large';
       readonly tiles: number;
+      readonly estimatedBytes: number;
     };
 
 /**
  * Verifica se a zona visível pode ser transferida: corta-a à área suportada (a função só aceita
- * tiles dessa área) e conta os tiles do zoom 0 ao 14.
+ * tiles dessa área), conta os tiles do zoom 0 ao 14 e estima o tamanho.
  */
 export function checkOfflineArea(bbox: BBox): OfflineAreaCheck {
-  if (!isValidBBox(bbox)) return { ok: false, reason: 'invalid', tiles: 0 };
+  if (!isValidBBox(bbox)) return { ok: false, reason: 'invalid', tiles: 0, estimatedBytes: 0 };
   const center = { lng: (bbox[0] + bbox[2]) / 2, lat: (bbox[1] + bbox[3]) / 2 };
   const area = ROUTING_AREAS.find(
     (a) => center.lng >= a[0] && center.lng <= a[2] && center.lat >= a[1] && center.lat <= a[3],
   );
-  if (!area) return { ok: false, reason: 'outside_area', tiles: 0 };
+  if (!area) return { ok: false, reason: 'outside_area', tiles: 0, estimatedBytes: 0 };
   const clipped: BBox = [
     Math.max(bbox[0], area[0]),
     Math.max(bbox[1], area[1]),
@@ -173,8 +203,14 @@ export function checkOfflineArea(bbox: BBox): OfflineAreaCheck {
     Math.min(bbox[3], area[3]),
   ];
   const tiles = countTiles(clipped);
-  if (tiles > OFFLINE_LIMITS.maxTiles) return { ok: false, reason: 'too_many_tiles', tiles };
-  return { ok: true, bbox: clipped, tiles };
+  const estimatedBytes = estimateOfflineBytes(clipped);
+  if (tiles > OFFLINE_LIMITS.maxTiles) {
+    return { ok: false, reason: 'too_many_tiles', tiles, estimatedBytes };
+  }
+  if (estimatedBytes > OFFLINE_LIMITS.maxBytes) {
+    return { ok: false, reason: 'too_large', tiles, estimatedBytes };
+  }
+  return { ok: true, bbox: clipped, tiles, estimatedBytes };
 }
 
 const bboxSchema = z
@@ -237,6 +273,8 @@ export interface OfflineAreasStore {
   getSnapshot(): OfflineAreasState;
   isPersistent(): boolean;
   subscribe(listener: () => void): () => void;
+  /** Relê o armazenamento (outro separador alterou as zonas). */
+  reload(): void;
   /** Regista uma zona nova (ainda vazia); `null` se já há o máximo de zonas. */
   add(input: Pick<OfflineArea, 'name' | 'bbox' | 'version'>): OfflineArea | null;
   /** Atualiza o progresso de uma zona (tiles, bytes, concluída). */
@@ -265,6 +303,7 @@ export function createOfflineAreasStore(options: OfflineAreasStoreOptions): Offl
     getSnapshot: store.getSnapshot,
     isPersistent: store.isPersistent,
     subscribe: store.subscribe,
+    reload: store.reload,
     add(input) {
       if (store.getSnapshot().areas.length >= MAX_OFFLINE_AREAS) return null;
       const area: OfflineArea = {

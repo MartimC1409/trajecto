@@ -57,8 +57,10 @@ describe('função offline-tile (transferências para mapas offline)', () => {
     expect(headers.get('user-agent')).toBe(TRANSIT_USER_AGENT);
     expect(headers.has('cookie')).toBe(false);
     expect(init.redirect).toBe('error');
-    expect(response.headers.get('content-encoding')).toBe('gzip');
-    expect(response.headers.get('content-type')).toBe('application/x-protobuf');
+    // Comprimido mas sem Content-Encoding: o browser entrega-o à app tal como está.
+    expect(response.headers.has('content-encoding')).toBe(false);
+    expect(response.headers.get('content-type')).toBe('application/octet-stream');
+    expect(response.headers.get('x-tile-encoding')).toBe('gzip');
     const body = new Uint8Array(await response.arrayBuffer());
     expect(Number(response.headers.get('x-tile-bytes'))).toBe(body.byteLength);
     expect(body.byteLength).toBeLessThan(TILE.byteLength);

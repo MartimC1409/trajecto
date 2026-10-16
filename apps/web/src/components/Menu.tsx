@@ -8,6 +8,7 @@ import type {
   ThemePreference,
 } from '@trajecto/core';
 import { FUEL_LIMITS, LANGUAGES, sortFavorites } from '@trajecto/core';
+import type { ReactNode } from 'react';
 import { useEffect, useId, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { LANGUAGE_NAMES } from '../i18n';
@@ -36,6 +37,8 @@ interface MenuProps {
   readonly onSetSpeedCameras: (enabled: boolean) => void;
   readonly onSetMapRelief: (enabled: boolean) => void;
   readonly onClearReports: () => void;
+  /** Secção "Mapas offline" (zonas guardadas no dispositivo). */
+  readonly offline?: ReactNode;
 }
 
 /** Campo numérico que aceita vírgula decimal e só grava valores dentro dos limites. */
@@ -212,6 +215,13 @@ export function Menu(props: MenuProps) {
         )}
       </section>
 
+      {props.offline && (
+        <section aria-labelledby={`${titleId}-offline`}>
+          <h3 id={`${titleId}-offline`}>{t('menu.offline')}</h3>
+          {props.offline}
+        </section>
+      )}
+
       <section aria-labelledby={`${titleId}-set`}>
         <h3 id={`${titleId}-set`}>{t('menu.settings')}</h3>
         <fieldset className="field">
@@ -373,6 +383,7 @@ export function Menu(props: MenuProps) {
         <p>{t('about.text')}</p>
         <p className="muted">{t('about.privacy')}</p>
         <p className="muted">{t('about.routingPrivacy')}</p>
+        <p className="muted">{t('about.offlinePrivacy')}</p>
         <h4>{t('about.dataTitle')}</h4>
         <ul className="attributions">
           <li>

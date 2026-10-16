@@ -17,11 +17,14 @@ import {
   Marker,
   NavigationControl,
   ScaleControl,
+  addProtocol,
 } from 'maplibre-gl';
 import { useEffect, useEffectEvent, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { iconSvg } from '../components/Icon';
 import type { AppConfig } from '../config';
+import type { MapResources } from '../offline/mapResources';
+import { MAP_GLYPHS_URL, MAP_PROTOCOL, MAP_TILEJSON_URL } from '../offline/mapResources';
 import { installMapImages } from './mapImages';
 import { MAP_ATTRIBUTION, POI_LAYERS, buildMapStyle } from './mapStyle';
 import type { MapStyleOptions, MapTheme } from './mapStyle';
@@ -36,6 +39,8 @@ import { TRANSIT_SOURCE, addTransitLayers, transitToGeoJson } from './transitLay
 
 export interface MapApi {
   getView(): MapViewState;
+  /** Retângulo visível no ecrã (para transferir a zona para usar sem rede). */
+  getBounds(): BBox;
 }
 
 /** Pedido para centrar o mapa; `seq` permite voltar a centrar no mesmo local. */
@@ -69,6 +74,8 @@ export interface MapNavigation {
 
 export interface MapViewProps {
   readonly config: AppConfig;
+  /** TileJSON, tiles e tipos de letra, com as zonas guardadas no dispositivo. */
+  readonly resources: MapResources;
   readonly theme: MapTheme;
   /** Mostrar o relevo do terreno (pede tiles de altitude a outro serviço). */
   readonly relief?: boolean;
@@ -188,6 +195,11 @@ function readView(map: MapLibreMap): MapViewState {
   return { center: { lng: center.lng, lat: center.lat }, zoom: map.getZoom() };
 }
 
+function readBounds(map: MapLibreMap): BBox {
+  const bounds = map.getBounds();
+  return [bounds.getWest(), bounds.getSouth(), bounds.getEast(), bounds.getNorth()];
+}
+
 export function MapView(props: MapViewProps) {
   const { t, i18n } = useTranslation();
   const containerRef = useRef<HTMLDivElement>(null);
@@ -216,11 +228,16 @@ export function MapView(props: MapViewProps) {
   const onFavoriteClick = useEffectEvent(props.onFavoriteClick);
   const onViewChange = useEffectEvent(props.onViewChange);
   const onReady = useEffectEvent(props.onReady);
+  // O mapa pede o TileJSON, os tiles e os tipos de letra através do protocolo `trajecto://`
+  // (mapResources.ts), que usa as zonas guardadas no dispositivo quando existem.
   const styleOptions = (): MapStyleOptions => ({
     ...props.config,
+    tileJsonUrl: MAP_TILEJSON_URL,
+    glyphsUrl: MAP_GLYPHS_URL,
     exitPrefix: t('map.exitPrefix'),
     reliefTilesUrl: props.relief ? props.config.reliefTilesUrl : null,
   });
+  const readResources = useEffectEvent(() => props.resources);
   const readInitial = useEffectEvent(() => ({
     theme: props.theme,
     view: props.initialView,
@@ -233,6 +250,7 @@ export function MapView(props: MapViewProps) {
     const container = containerRef.current;
     if (!container) return;
     const initial = readInitial();
+    addProtocol(MAP_PROTOCOL, readResources().load);
     let map: MapLibreMap;
     try {
       map = new MapLibreMap({
@@ -314,7 +332,7 @@ export function MapView(props: MapViewProps) {
     map.on('error', (event) => console.warn('[mapa]', event.error.message));
 
     mapRef.current = map;
-    onReady({ getView: () => readView(map) });
+    onReady({ getView: () => readView(map), getBounds: () => readBounds(map) });
 
     return () => {
       onReady(null);

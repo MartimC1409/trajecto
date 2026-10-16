@@ -10,6 +10,7 @@ export interface MockState {
   readonly routeRequests: Record<string, unknown>[];
   readonly weatherRequests: URL[];
   readonly transitRequests: URL[];
+  readonly offlineTileRequests: URL[];
   readonly consoleErrors: string[];
 }
 
@@ -19,6 +20,7 @@ export interface MockState {
  * - rotas (função /api/route → Valhalla);
  * - meteorologia (função /api/weather → Open-Meteo);
  * - transportes públicos (função /api/transit → Transitous);
+ * - mapas offline (função /api/offline-tile → OpenFreeMap): tiles vazios;
  * - tiles do OpenFreeMap (TileJSON com tiles vazios) e do relevo (Mapterhorn).
  * Assim os testes são rápidos, repetíveis e não sobrecarregam serviços públicos.
  */
@@ -73,6 +75,7 @@ export async function mockServices(
     routeRequests: [],
     weatherRequests: [],
     transitRequests: [],
+    offlineTileRequests: [],
     consoleErrors: [],
   };
 
@@ -126,6 +129,10 @@ export async function mockServices(
   await page.route('**/api/transit?**', async (route) => {
     state.transitRequests.push(new URL(route.request().url()));
     await route.fulfill({ json: TRANSIT_RESPONSE });
+  });
+  await page.route('**/api/offline-tile?**', async (route) => {
+    state.offlineTileRequests.push(new URL(route.request().url()));
+    await route.fulfill({ status: 204 });
   });
   await page.route('https://tiles.openfreemap.org/planet', (route) =>
     route.fulfill({

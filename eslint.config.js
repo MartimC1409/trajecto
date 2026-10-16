@@ -33,4 +33,9 @@ export default tseslint.config(
     files: ['**/*.{js,mjs}'],
     languageOptions: { globals: { ...globals.node } },
   },
+  {
+    // Service worker: corre no browser, num contexto próprio (sem DOM).
+    files: ['apps/web/sw/**/*.js'],
+    languageOptions: { globals: { ...globals.serviceworker } },
+  },
 );

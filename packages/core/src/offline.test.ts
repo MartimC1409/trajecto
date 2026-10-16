@@ -7,6 +7,8 @@ import {
   checkOfflineArea,
   countTiles,
   createOfflineAreasStore,
+  estimateOfflineBytes,
+  estimatedTileBytes,
   isTileInArea,
   isTileInsideSupportedArea,
   isValidTile,
@@ -63,6 +65,14 @@ describe('tiles', () => {
     expect(isTileInsideSupportedArea({ z: 14, x: 8298, y: 5637 })).toBe(false); // Paris
   });
 
+  it('estima o tamanho dos tiles por zoom (valores medidos na cidade)', () => {
+    expect(estimatedTileBytes(14)).toBe(180_000);
+    expect(estimatedTileBytes(13)).toBe(110_000);
+    expect(estimatedTileBytes(5)).toBe(70_000);
+    const oneTile: BBox = [-9.14, 38.737, -9.119, 38.754];
+    expect(estimateOfflineBytes(oneTile, 14, 14)).toBe(180_000);
+  });
+
   it('lê a versão dos tiles do TileJSON do OpenFreeMap', () => {
     expect(
       openFreeMapVersion('https://tiles.openfreemap.org/planet/20231227_043106_pt/{z}/{x}/{y}.pbf'),
@@ -78,8 +88,11 @@ describe('checkOfflineArea', () => {
   it('aceita uma zona de cidade dentro do limite de tiles', () => {
     const check = checkOfflineArea(BAIXA);
     expect(check).toMatchObject({ ok: true, bbox: BAIXA });
-    // 10 km × 10 km do zoom 0 ao 14: 75 tiles (o limite de 3000 dá para ~80 km × 80 km).
+    // 10 km × 10 km do zoom 0 ao 14: 75 tiles, ~8 MB estimados.
     expect(check.tiles).toBe(75);
+    expect(check.estimatedBytes).toBe(estimateOfflineBytes(BAIXA));
+    expect(check.estimatedBytes).toBeGreaterThan(5_000_000);
+    expect(check.estimatedBytes).toBeLessThan(OFFLINE_LIMITS.maxBytes);
     expect(check.tiles).toBeLessThanOrEqual(OFFLINE_LIMITS.maxTiles);
   });
 
@@ -88,6 +101,11 @@ describe('checkOfflineArea', () => {
       ok: false,
       reason: 'too_many_tiles',
     });
+    // 3000 tiles cabem, mas a estimativa passa dos 50 MB (~60 km × 60 km com o zoom 14).
+    const big = checkOfflineArea([-9.5, 38.45, -8.8, 39.0]);
+    expect(big).toMatchObject({ ok: false, reason: 'too_large' });
+    expect(big.tiles).toBeLessThanOrEqual(OFFLINE_LIMITS.maxTiles);
+    expect(big.estimatedBytes).toBeGreaterThan(OFFLINE_LIMITS.maxBytes);
     expect(checkOfflineArea([2.2, 48.8, 2.5, 48.9])).toMatchObject({
       ok: false,
       reason: 'outside_area',

@@ -5,6 +5,8 @@ export const ptPT = {
     skipToSearch: 'Saltar para a pesquisa',
     storageWarning:
       'Não foi possível guardar dados neste dispositivo. Os favoritos e o histórico perdem-se ao fechar a página.',
+    offline:
+      'Sem rede: o mapa mostra só as zonas guardadas; a pesquisa e as rotas não estão disponíveis.',
   },
   map: {
     /** Antes do número da saída de uma autoestrada (com o espaço). */
@@ -359,7 +361,43 @@ export const ptPT = {
     favorites: 'Favoritos',
     history: 'Recentes',
     settings: 'Definições',
+    offline: 'Mapas offline',
     about: 'Sobre',
+  },
+  offline: {
+    intro:
+      'Guarda a zona que está no ecrã para veres o mapa sem rede (sem o relevo). Cada zona tem no máximo {{max}}: numa cidade, cerca de 25 km × 25 km; no campo, mais.',
+    noMap: 'Abre o mapa para escolher a zona a guardar.',
+    estimate: 'Zona no ecrã: cerca de {{size}}.',
+    tooLarge:
+      'A zona no ecrã é grande demais (cerca de {{size}}; máximo {{max}}). Aproxima o mapa.',
+    outside: 'Só é possível guardar zonas de Portugal e Espanha.',
+    save: 'Guardar esta zona',
+    saving: 'A guardar «{{name}}»: {{percent}} %',
+    cancel: 'Cancelar',
+    saved: 'Zonas guardadas',
+    incomplete: 'incompleta',
+    show: 'Ver no mapa',
+    resume: 'Continuar',
+    remove: 'Apagar',
+    confirmRemove: 'Confirmar: apagar {{name}}',
+    areaFallback: 'Zona {{n}}',
+    storage: 'Espaço usado por esta app: {{used}} de {{quota}} disponíveis.',
+    storageUsed: 'Espaço usado por esta app: {{used}}.',
+    notPersisted: 'O browser pode apagar os mapas guardados se o dispositivo ficar sem espaço.',
+    notPersistedApple:
+      'No iPhone e no iPad, adiciona o Trajecto ao ecrã principal (Partilhar → Adicionar ao ecrã principal) para os mapas guardados não serem apagados.',
+    unsupported: 'Este browser não permite guardar mapas para usar sem rede.',
+    messages: {
+      complete: '«{{name}}» está guardada: o mapa desta zona funciona sem rede.',
+      cancelled: 'Cancelado. O que já foi guardado fica; podes continuar mais tarde.',
+      too_large:
+        'Chegou ao limite de {{max}} por transferência: «{{name}}» ficou incompleta. Guarda zonas mais pequenas.',
+      failed:
+        'A transferência de «{{name}}» parou (sem rede ou serviço indisponível). Podes continuar mais tarde.',
+      storage_full: 'Não há espaço no dispositivo para guardar mais mapas.',
+      limit_reached: 'Já tens {{max}} zonas guardadas. Apaga uma para guardar outra.',
+    },
   },
   favorites: {
     empty: 'Ainda não tens favoritos. Escolhe um local e guarda-o.',
@@ -417,6 +455,8 @@ export const ptPT = {
       'Os teus favoritos, histórico e definições ficam só neste dispositivo. As pesquisas são enviadas ao serviço público Photon (komoot) e os mapas são pedidos ao OpenFreeMap: estes serviços recebem o teu endereço IP e o que pesquisas ou vês no mapa.',
     routingPrivacy:
       'Para calcular rotas, os pontos de partida, paragens e destino (incluindo a tua localização, se a usares) passam pelo servidor do Trajecto no Vercel e são enviados ao servidor público Valhalla da FOSSGIS. A tua localização durante a navegação fica só no dispositivo, exceto quando é preciso recalcular a rota.',
+    offlinePrivacy:
+      'Os mapas guardados para usar sem rede ficam só neste dispositivo. Para os transferir, os pedidos passam pelo servidor do Trajecto no Vercel e chegam ao OpenFreeMap com a identificação da app (e não o teu endereço IP); indicam a zona escolhida.',
     dataTitle: 'Dados e atribuições',
     osm: 'Dados do mapa © contribuidores do OpenStreetMap, disponíveis sob a licença ODbL.',
     omt: 'Tiles vetoriais no esquema © OpenMapTiles (CC-BY 4.0), servidos pelo OpenFreeMap.',

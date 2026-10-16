@@ -1,6 +1,6 @@
 import type { TFunction } from 'i18next';
 import { describe, expect, it } from 'vitest';
-import { formatClock, formatDistance, formatDuration, formatEuros } from './format';
+import { formatClock, formatBytes, formatDistance, formatDuration, formatEuros } from './format';
 
 const t = ((key: string, options?: Record<string, unknown>) =>
   `${key}${options ? JSON.stringify(options) : ''}`) as unknown as TFunction;
@@ -29,5 +29,16 @@ describe('format', () => {
   it('formata horas e euros', () => {
     expect(formatClock(new Date(2026, 9, 14, 9, 5), 'pt-PT')).toBe('09:05');
     expect(formatEuros(3.2, 'pt-PT').replace(/\s/gu, ' ')).toBe('3,20 €');
+  });
+});
+
+describe('formatBytes', () => {
+  it('mostra kB, MB e GB com uma casa decimal abaixo de 10', () => {
+    expect(formatBytes(0, 'pt-PT')).toBe('0 kB');
+    expect(formatBytes(850_000, 'pt-PT')).toBe('850 kB');
+    expect(formatBytes(1_234_567, 'pt-PT')).toBe('1,2 MB');
+    expect(formatBytes(50_000_000, 'pt-PT')).toBe('50 MB');
+    expect(formatBytes(2_000_000_000, 'en')).toBe('2 GB');
+    expect(formatBytes(Number.NaN, 'pt-PT')).toBe('0 kB');
   });
 });

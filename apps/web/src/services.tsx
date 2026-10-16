@@ -2,6 +2,7 @@ import type {
   Geocoder,
   KeyValueStorage,
   LngLat,
+  OfflineAreasStore,
   PlacesStore,
   PreferencesStore,
   ReportsStore,
@@ -12,6 +13,7 @@ import type {
 import {
   createCachedGeocoder,
   createMemoryStorage,
+  createOfflineAreasStore,
   createPhotonGeocoder,
   createPlacesStore,
   createPreferencesStore,
@@ -24,6 +26,10 @@ import type { ReactNode } from 'react';
 import { createContext, useContext } from 'react';
 import type { AppConfig } from './config';
 import { getCurrentLngLat } from './hooks/location';
+import type { MapResources } from './offline/mapResources';
+import { createMapResources } from './offline/mapResources';
+import type { OfflineTileStore } from './offline/tileStore';
+import { createCacheTileStore, isOfflineSupported } from './offline/tileStore';
 
 export interface Services {
   readonly geocoder: Geocoder;
@@ -37,6 +43,12 @@ export interface Services {
   readonly places: PlacesStore;
   readonly reports: ReportsStore;
   readonly preferences: PreferencesStore;
+  /** Zonas do mapa transferidas para usar sem rede. */
+  readonly offlineAreas: OfflineAreasStore;
+  /** Tiles guardados; `null` se o browser não suporta mapas offline. */
+  readonly offlineTiles: OfflineTileStore | null;
+  /** Recursos do mapa (TileJSON, tiles, tipos de letra) com as zonas guardadas. */
+  readonly mapResources: MapResources;
   /** `false` quando o browser bloqueia o armazenamento e os dados só existem em memória. */
   readonly storagePersistent: boolean;
 }
@@ -62,8 +74,20 @@ export function getBrowserStorage(): BrowserStorage {
   }
 }
 
+/** Armazenamento de tiles vazio, para browsers sem suporte de mapas offline. */
+const NO_TILES: OfflineTileStore = {
+  has: async () => false,
+  get: async () => null,
+  put: async () => undefined,
+  delete: async () => undefined,
+  clear: async () => undefined,
+};
+
 export function createServices(config: AppConfig, browserStorage: BrowserStorage): Services {
   const { storage, persistent } = browserStorage;
+  const caches = typeof globalThis.caches === 'undefined' ? undefined : globalThis.caches;
+  const offlineAreas = createOfflineAreasStore({ storage });
+  const offlineTiles = caches && isOfflineSupported() ? createCacheTileStore(caches) : null;
   return {
     geocoder: createCachedGeocoder(createPhotonGeocoder({ baseUrl: config.geocoderUrl })),
     router: createValhallaRouter({ url: config.routerUrl }),
@@ -74,6 +98,15 @@ export function createServices(config: AppConfig, browserStorage: BrowserStorage
     places: createPlacesStore({ storage }),
     reports: createReportsStore({ storage }),
     preferences: createPreferencesStore(storage),
+    offlineAreas,
+    offlineTiles,
+    mapResources: createMapResources({
+      tileJsonUrl: config.tileJsonUrl,
+      glyphsUrl: config.glyphsUrl,
+      store: offlineTiles ?? NO_TILES,
+      ...(caches ? { caches } : {}),
+      areas: () => (offlineTiles ? offlineAreas.getSnapshot().areas : []),
+    }),
     storagePersistent: persistent,
   };
 }

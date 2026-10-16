@@ -9,8 +9,9 @@
  *
  * - só aceita GET com `v` (versão dos tiles ou "latest"), `z` (0–14), `x` e `y`;
  * - só tiles que tocam na área suportada pela app (Portugal, Espanha, ilhas e Canárias);
- * - devolve o tile comprimido (gzip) com o tamanho comprimido em `X-Tile-Bytes`, para a app
- *   contar o limite de 50 MB;
+ * - devolve o tile comprimido (gzip) como dados binários, sem `Content-Encoding`: o browser não o
+ *   descomprime e a app guarda-o assim (ocupa ~3 vezes menos). O tamanho conta para o limite de
+ *   50 MB e vai também em `X-Tile-Bytes`;
  * - impõe tempo máximo e tamanho máximo de resposta.
  */
 import { gzipSync } from 'node:zlib';
@@ -169,8 +170,8 @@ export async function handleOfflineTileRequest(
     status: 200,
     headers: {
       ...headers,
-      'Content-Type': 'application/x-protobuf',
-      'Content-Encoding': 'gzip',
+      'Content-Type': 'application/octet-stream',
+      'X-Tile-Encoding': 'gzip',
       'X-Tile-Bytes': String(compressed.byteLength),
     },
   });
