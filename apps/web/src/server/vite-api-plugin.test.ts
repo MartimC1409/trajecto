@@ -95,6 +95,23 @@ describe('apiPlugin', () => {
     expect(upstream.searchParams.get('toPlace')).toBe('38.8,-9.2');
   });
 
+  it('serve /api/offline-tile (tiles para os mapas offline)', async () => {
+    const fetchMock = vi.fn<typeof fetch>(async () => new Response(null, { status: 204 }));
+    vi.stubGlobal('fetch', fetchMock);
+    const { res, done } = response();
+    const req = request('GET', '');
+    Object.assign(req, {
+      url: '/?v=latest&z=0&x=0&y=0',
+      headers: { ...req.headers, 'sec-fetch-site': 'same-origin' },
+    });
+    mount(apiPlugin(), 'configureServer', '/api/offline-tile')(req, res);
+    expect(await done).toBe('');
+    expect(res.statusCode).toBe(204);
+    expect(String(fetchMock.mock.calls[0]?.[0])).toBe(
+      'https://tiles.openfreemap.org/planet/latest/0/0/0.pbf',
+    );
+  });
+
   it('recusa corpos grandes e outros métodos, e trata erros internos', async () => {
     const handler = mount(apiPlugin(), 'configureServer');
     const big = response();

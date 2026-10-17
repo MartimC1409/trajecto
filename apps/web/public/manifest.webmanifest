@@ -1,7 +1,7 @@
 {
   "name": "Trajecto",
   "short_name": "Trajecto",
-  "description": "Mapas e pesquisa de moradas em Portugal.",
+  "description": "Mapas, rotas com navegação por voz, transportes públicos e mapas sem rede, em Portugal.",
   "lang": "pt-PT",
   "dir": "ltr",
   "start_url": "/",

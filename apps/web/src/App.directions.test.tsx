@@ -15,7 +15,10 @@ const mapProps = vi.hoisted(() => ({ current: null as MapViewProps | null }));
 vi.mock('./map/MapView', () => ({
   MapView: (props: MapViewProps) => {
     mapProps.current = props;
-    props.onReady({ getView: () => ({ center: { lng: -9.14, lat: 38.72 }, zoom: 13 }) });
+    props.onReady({
+      getView: () => ({ center: { lng: -9.14, lat: 38.72 }, zoom: 13 }),
+      getBounds: () => [-9.15, 38.71, -9.13, 38.73],
+    });
     return <div data-testid="map" />;
   },
 }));

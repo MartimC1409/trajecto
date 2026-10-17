@@ -1,4 +1,5 @@
 import type {
+  BBox,
   Favorite,
   LngLat,
   MapViewState,
@@ -21,6 +22,7 @@ import { DirectionsPanel } from './components/DirectionsPanel';
 import { Icon } from './components/Icon';
 import { Menu } from './components/Menu';
 import { NavigationView } from './components/NavigationView';
+import { OfflineMaps } from './components/OfflineMaps';
 import type { Selection } from './components/PlaceSheet';
 import { PlaceSheet } from './components/PlaceSheet';
 import { ReportPicker } from './components/ReportPicker';
@@ -28,6 +30,8 @@ import { ReportSheet } from './components/ReportSheet';
 import { SearchBox } from './components/SearchBox';
 import type { AppConfig } from './config';
 import { useNow } from './hooks/useNow';
+import { useOfflineAreas } from './hooks/useOfflineAreas';
+import { useOnline } from './hooks/useOnline';
 import { useSpeedCameras } from './hooks/useSpeedCameras';
 import { useResolvedTheme } from './hooks/useResolvedTheme';
 import { useStore } from './hooks/useStore';
@@ -39,6 +43,15 @@ import { useNavigation } from './navigation/useNavigation';
 import { useServices } from './services';
 
 const MENU_ID = 'app-menu';
+
+/** iPhone e iPad (no iPadOS o Safari apresenta-se como um Mac com ecrã tátil). */
+function isAppleTouchDevice(): boolean {
+  if (typeof navigator === 'undefined') return false;
+  return (
+    /iPhone|iPad|iPod/u.test(navigator.userAgent) ||
+    (/Macintosh/u.test(navigator.userAgent) && navigator.maxTouchPoints > 1)
+  );
+}
 
 export function App({ config }: { config: AppConfig }) {
   const { t, i18n } = useTranslation();
@@ -101,6 +114,9 @@ export function App({ config }: { config: AppConfig }) {
   >(null);
   const [openReportId, setOpenReportId] = useState<string | null>(null);
   const speedCameras = useSpeedCameras(config.speedCamerasUrl, prefs.speedCameras);
+  const offline = useOfflineAreas(services);
+  const online = useOnline();
+  const [appleDevice] = useState(isAppleTouchDevice);
   const openReport = visibleReports.find((r) => r.id === openReportId) ?? null;
 
   // A mensagem desaparece ao fim de 4 s.
@@ -119,6 +135,8 @@ export function App({ config }: { config: AppConfig }) {
 
   // Cancela pedidos pendentes quando a app é desmontada.
   useEffect(() => () => reverseRef.current?.abort(), []);
+
+  const getMapBounds = useCallback((): BBox | undefined => mapApiRef.current?.getBounds(), []);
 
   const getBias = useCallback((): SearchBias | undefined => {
     const view = mapApiRef.current?.getView();
@@ -341,11 +359,17 @@ export function App({ config }: { config: AppConfig }) {
           {t('app.storageWarning')}
         </p>
       )}
+      {!online && (
+        <p className="banner" role="status">
+          {t('app.offline')}
+        </p>
+      )}
 
       <main className="map-area">
         <h1 className="visually-hidden">{t('app.name')}</h1>
         <MapView
           config={config}
+          resources={services.mapResources}
           theme={theme}
           relief={prefs.mapRelief}
           initialView={initialView}
@@ -490,6 +514,9 @@ export function App({ config }: { config: AppConfig }) {
         onRemoveHistory={(id) => places.removeFromHistory(id)}
         onClearHistory={() => places.clearHistory()}
         onClearAll={() => {
+          offline.cancel();
+          services.offlineAreas.clear();
+          void services.offlineTiles?.clear();
           places.clearAll();
           reports.clear();
           preferences.reset();
@@ -508,6 +535,23 @@ export function App({ config }: { config: AppConfig }) {
           reports.clear();
           showToast(t('reports.removed'));
         }}
+        offline={
+          <OfflineMaps
+            api={offline}
+            getBounds={getMapBounds}
+            geocoder={geocoder}
+            appleDevice={appleDevice}
+            onShowArea={(bbox) => {
+              closeMenu();
+              focusSeq.current += 1;
+              setFocus({
+                seq: focusSeq.current,
+                lngLat: { lng: (bbox[0] + bbox[2]) / 2, lat: (bbox[1] + bbox[3]) / 2 },
+                bbox,
+              });
+            }}
+          />
+        }
       />
     </div>
   );

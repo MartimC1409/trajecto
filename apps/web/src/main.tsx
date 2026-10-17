@@ -7,6 +7,7 @@ import { App } from './App';
 import { config } from './config';
 import { initI18n } from './i18n';
 import { ServicesProvider, createServices, getBrowserStorage } from './services';
+import { registerServiceWorker } from './sw/register';
 
 async function start() {
   const services = createServices(config, getBrowserStorage());
@@ -24,3 +25,4 @@ async function start() {
 }
 
 void start();
+registerServiceWorker();

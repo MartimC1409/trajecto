@@ -55,6 +55,7 @@ export function useNavigation(
           instruction,
         }),
       reroutingMessage: () => live.current.t('nav.rerouting'),
+      offlineMessage: () => live.current.t('nav.rerouteOffline'),
       alertMessage: (kind, meters, detail) =>
         live.current.t(
           detail === undefined ? `alerts.spoken.${kind}` : `alerts.spokenWithLimit.${kind}`,

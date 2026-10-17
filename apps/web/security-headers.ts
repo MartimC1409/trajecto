@@ -31,6 +31,13 @@ export function buildSecurityHeaders(options: SecurityHeaderOptions): Record<str
     'X-Content-Type-Options': 'nosniff',
     'Referrer-Policy': 'strict-origin-when-cross-origin',
     'Permissions-Policy': 'geolocation=(self), camera=(), microphone=(), payment=()',
+    // Só HTTPS durante 2 anos (o Vercel serve sempre HTTPS; em http://localhost é ignorado).
+    'Strict-Transport-Security': 'max-age=63072000; includeSubDomains',
+    // Outras janelas não acedem a esta (e vice-versa); os recursos só servem este site.
+    'Cross-Origin-Opener-Policy': 'same-origin',
+    'Cross-Origin-Resource-Policy': 'same-origin',
+    // Para browsers antigos sem `frame-ancestors` na CSP.
+    'X-Frame-Options': 'DENY',
   };
 }
 

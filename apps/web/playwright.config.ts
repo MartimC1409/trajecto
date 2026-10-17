@@ -23,6 +23,9 @@ export default defineConfig({
     locale: 'pt-PT',
     timezoneId: 'Europe/Lisbon',
     trace: 'retain-on-failure',
+    // Com o service worker ativo, page.route não vê os pedidos que ele trata. Só o teste do modo
+    // sem rede (offline.spec.ts) o liga.
+    serviceWorkers: 'block',
   },
   // Testamos a versão de produção (com a política de segurança de conteúdo ativa).
   webServer: {

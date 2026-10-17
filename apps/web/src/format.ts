@@ -38,3 +38,19 @@ export function formatClock(date: Date, locale: string): string {
 export function formatEuros(value: number, locale: string): string {
   return new Intl.NumberFormat(locale, { style: 'currency', currency: 'EUR' }).format(value);
 }
+
+/** Tamanho de dados legível ("850 kB", "12,3 MB", "1,2 GB"), em unidades decimais. */
+export function formatBytes(bytes: number, locale: string): string {
+  const safe = Number.isFinite(bytes) && bytes > 0 ? bytes : 0;
+  const [unit, value] =
+    safe >= 1e9
+      ? (['gigabyte', safe / 1e9] as const)
+      : safe >= 1e6
+        ? (['megabyte', safe / 1e6] as const)
+        : (['kilobyte', safe / 1e3] as const);
+  return new Intl.NumberFormat(locale, {
+    style: 'unit',
+    unit,
+    maximumFractionDigits: value < 10 ? 1 : 0,
+  }).format(value);
+}

@@ -7,7 +7,7 @@ import {
 } from '@trajecto/core';
 import { valhallaResponse } from '@trajecto/core/testing';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { NavigationState, NavigationTarget } from './session';
+import type { NavigationSessionDeps, NavigationState, NavigationTarget } from './session';
 import { createNavigationSession } from './session';
 
 const route = parseValhallaResponse(valhallaResponse(), 'car')[0] as Route;
@@ -62,7 +62,7 @@ function fakeGeolocation() {
   return { geolocation: geolocation as unknown as Geolocation, raw: geolocation, emit, fail };
 }
 
-function setup(routerImpl?: Router['route']) {
+function setup(routerImpl?: Router['route'], extra: Partial<NavigationSessionDeps> = {}) {
   const states: (NavigationState | null)[] = [];
   const speak = vi.fn<(texts: readonly string[]) => void>();
   const router: Router = { route: vi.fn(routerImpl ?? (async () => [route])) };
@@ -75,6 +75,7 @@ function setup(routerImpl?: Router['route']) {
     reroutingMessage: () => 'A recalcular a rota.',
     alertMessage: (kind, meters) => `${kind} daqui a ${meters} metros.`,
     onChange: (state) => states.push(state),
+    ...extra,
   });
   const target: NavigationTarget = {
     route,
@@ -162,6 +163,29 @@ describe('createNavigationSession', () => {
     expect(session.getState()?.notice).toBe('reroute_failed');
     gps.emit(along(200), 5000);
     expect(session.getState()?.notice).toBeNull();
+  });
+
+  it('sem rede não tenta recalcular: avisa uma vez e recalcula quando a rede volta', async () => {
+    let online = false;
+    const { session, speak, gps, target, router } = setup(undefined, {
+      isOnline: () => online,
+      offlineMessage: () => 'Sem rede para recalcular.',
+    });
+    session.start(target);
+    gps.emit(along(100), 0);
+    for (let t = 1; t <= 20; t++) gps.emit(along(150, 150), t * 1000);
+    expect(router.route).not.toHaveBeenCalled();
+    expect(session.getState()?.notice).toBe('reroute_offline');
+    expect(
+      speak.mock.calls.filter(([texts]) => texts.includes('Sem rede para recalcular.')),
+    ).toHaveLength(1);
+    expect(speak).not.toHaveBeenCalledWith(['A recalcular a rota.']);
+    // A rede volta: a posição seguinte recalcula logo, sem esperar pelo intervalo entre pedidos.
+    online = true;
+    gps.emit(along(150, 150), 21_000);
+    expect(router.route).toHaveBeenCalledTimes(1);
+    await vi.runAllTimersAsync();
+    expect(session.getState()).toMatchObject({ rerouting: false, notice: null });
   });
 
   it('ignora o resultado de um recálculo depois de terminar', async () => {

@@ -25,5 +25,7 @@ Estados possíveis:
 | [0013](0013-reportes-locais-e-radares.md) | Fase 5: reportes no dispositivo e radares fixos do OpenStreetMap | Aceite | 2026-10-15 |
 | [0014](0014-mapa-detalhado-e-relevo.md) | Mapa mais detalhado e relevo do terreno | Aceite | 2026-10-15 |
 | [0015](0015-transportes-publicos-transitous.md) | Fase 6: transportes públicos pelo Transitous | Aceite | 2026-10-15 |
+| [0016](0016-mapas-offline.md) | Fase 7: mapas offline e app sem rede | Aceite | 2026-10-16 |
+| [0017](0017-rotas-sem-rede.md) | Fase 7: rotas sem rede (investigação) | Aceite | 2026-10-16 |
 
 O contexto completo está em [`../fase-0-planeamento.md`](../fase-0-planeamento.md).

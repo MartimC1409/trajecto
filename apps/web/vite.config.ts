@@ -4,6 +4,7 @@ import type { ProxyOptions } from 'vite';
 import { defineConfig, loadEnv } from 'vite';
 import { buildSecurityHeaders, originOf } from './security-headers';
 import { apiPlugin } from './vite-api-plugin';
+import { serviceWorkerPlugin } from './vite-sw-plugin';
 
 const DEFAULT_GEOCODER_UPSTREAM = 'https://photon.komoot.io';
 const DEFAULT_TILEJSON_URL = 'https://tiles.openfreemap.org/planet';
@@ -49,7 +50,12 @@ export default defineConfig(({ mode }) => {
 
   return {
     // ROUTER_UPSTREAM permite usar um Valhalla próprio (por exemplo http://localhost:8002/route).
-    plugins: [react(), apiPlugin({ routeUpstream: env.ROUTER_UPSTREAM || undefined })],
+    plugins: [
+      react(),
+      apiPlugin({ routeUpstream: env.ROUTER_UPSTREAM || undefined }),
+      // Service worker (sw.js) para a app abrir sem rede (Fase 7).
+      serviceWorkerPlugin(),
+    ],
     worker: { format: 'es' },
     server: { port: 5173, strictPort: true, proxy },
     preview: {
@@ -63,8 +69,9 @@ export default defineConfig(({ mode }) => {
     build: {
       target: 'es2022',
       sourcemap: true,
-      // Só o MapLibre tem ~1 MB; a divisão do código em partes fica para a Fase 7 (otimização).
-      chunkSizeWarningLimit: 1600,
+      // Só o MapLibre tem ~1 MB. Fica um só ficheiro de propósito: o service worker guarda-o
+      // todo para a app abrir sem rede, e dividi-lo não reduz o total transferido (Fase 7).
+      chunkSizeWarningLimit: 1800,
     },
     test: {
       environment: 'jsdom',
@@ -72,7 +79,7 @@ export default defineConfig(({ mode }) => {
       include: ['src/**/*.test.{ts,tsx}'],
       coverage: {
         provider: 'v8',
-        include: ['src/**/*.{ts,tsx}', 'api/**/*.ts', 'vite-api-plugin.ts'],
+        include: ['src/**/*.{ts,tsx}', 'api/**/*.ts', 'vite-api-plugin.ts', 'vite-sw-plugin.ts'],
         // O mapa (WebGL) e o arranque são cobertos pelos testes ponta a ponta (Playwright).
         exclude: [
           'src/**/*.test.{ts,tsx}',

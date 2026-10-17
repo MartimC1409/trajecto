@@ -75,6 +75,7 @@ export function NavigationView(props: NavigationViewProps) {
   let status = '';
   if (state.rerouting) status = t('nav.rerouting');
   else if (state.notice === 'reroute_failed') status = t('nav.rerouteFailed');
+  else if (state.notice === 'reroute_offline') status = t('nav.rerouteOffline');
   else if (state.notice === 'gps_denied') status = t('nav.gpsDenied');
   else if (state.notice === 'gps_error') status = t('nav.gpsError');
   else if (state.notice === 'gps_weak') {

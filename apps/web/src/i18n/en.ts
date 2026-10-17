@@ -6,6 +6,8 @@ export const en: Messages = {
     skipToSearch: 'Skip to search',
     storageWarning:
       'Data cannot be saved on this device. Favourites and history will be lost when the page is closed.',
+    offline:
+      'No connection: the map only shows saved areas, and search and routes are unavailable.',
   },
   map: {
     exitPrefix: 'Exit ',
@@ -325,6 +327,8 @@ export const en: Messages = {
     recenter: 'Re-centre',
     rerouting: 'Recalculating route…',
     rerouteFailed: 'Could not recalculate the route. Trying again.',
+    rerouteOffline:
+      'No connection: the route can’t be recalculated. Return to the route or wait for a connection.',
     offRoute: 'Off route',
     arrived: 'You have arrived.',
     starting: 'Starting navigation.',
@@ -354,7 +358,42 @@ export const en: Messages = {
     favorites: 'Favourites',
     history: 'Recent',
     settings: 'Settings',
+    offline: 'Offline maps',
     about: 'About',
+  },
+  offline: {
+    intro:
+      'Save the area on screen to see the map without a connection (without terrain shading). Each area is at most {{max}}: about 25 km × 25 km in a city, more in the countryside.',
+    noMap: 'Open the map to choose the area to save.',
+    estimate: 'Area on screen: about {{size}}.',
+    tooLarge: 'The area on screen is too big (about {{size}}; maximum {{max}}). Zoom in.',
+    outside: 'Only areas in Portugal and Spain can be saved.',
+    save: 'Save this area',
+    saving: 'Saving “{{name}}”: {{percent}} %',
+    cancel: 'Cancel',
+    saved: 'Saved areas',
+    incomplete: 'incomplete',
+    show: 'Show on map',
+    resume: 'Continue',
+    remove: 'Delete',
+    confirmRemove: 'Confirm: delete {{name}}',
+    areaFallback: 'Area {{n}}',
+    storage: 'Space used by this app: {{used}} of {{quota}} available.',
+    storageUsed: 'Space used by this app: {{used}}.',
+    notPersisted: 'The browser may delete saved maps if the device runs out of space.',
+    notPersistedApple:
+      'On iPhone and iPad, add Trajecto to the Home Screen (Share → Add to Home Screen) so saved maps are not deleted.',
+    unsupported: 'This browser cannot save maps for offline use.',
+    messages: {
+      complete: '“{{name}}” is saved: the map of this area works offline.',
+      cancelled: 'Cancelled. What was already saved stays; you can continue later.',
+      too_large:
+        'Reached the {{max}} limit per download: “{{name}}” is incomplete. Save smaller areas.',
+      failed:
+        'The download of “{{name}}” stopped (no connection or service unavailable). You can continue later.',
+      storage_full: 'There is no space on the device to save more maps.',
+      limit_reached: 'You already have {{max}} saved areas. Delete one to save another.',
+    },
   },
   favorites: {
     empty: 'No favourites yet. Pick a place and save it.',
@@ -412,6 +451,8 @@ export const en: Messages = {
       'Your favourites, history and settings stay on this device. Searches are sent to the public Photon service (komoot) and maps are requested from OpenFreeMap: these services receive your IP address and what you search for or view on the map.',
     routingPrivacy:
       'To calculate routes, the start, stops and destination (including your location, if you use it) go through the Trajecto server on Vercel and are sent to the public FOSSGIS Valhalla server. Your location during navigation stays on the device, except when the route needs to be recalculated.',
+    offlinePrivacy:
+      'Maps saved for offline use stay only on this device. To download them, requests go through the Trajecto server on Vercel and reach OpenFreeMap with the app’s identification (not your IP address); they reveal the chosen area.',
     dataTitle: 'Data and attributions',
     osm: 'Map data © OpenStreetMap contributors, available under the ODbL licence.',
     omt: 'Vector tiles in the © OpenMapTiles schema (CC-BY 4.0), served by OpenFreeMap.',

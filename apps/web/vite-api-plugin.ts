@@ -1,5 +1,6 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import type { Plugin } from 'vite';
+import { handleOfflineTileRequest } from './api/offline-tile';
 import { handleRouteRequest } from './api/route';
 import { handleTransitRequest } from './api/transit';
 import { handleWeatherRequest } from './api/weather';
@@ -69,7 +70,7 @@ function middleware(path: string, handler: Handler) {
 }
 
 /**
- * Serve /api/route, /api/weather e /api/transit no `vite` e no `vite preview` com as mesmas funções usadas
+ * Serve /api/route, /api/weather, /api/transit e /api/offline-tile no `vite` e no `vite preview` com as mesmas funções usadas
  * no Vercel, para o comportamento ser igual em desenvolvimento e em produção.
  */
 export function apiPlugin(options: { routeUpstream?: string } = {}): Plugin {
@@ -84,6 +85,7 @@ export function apiPlugin(options: { routeUpstream?: string } = {}): Plugin {
     ],
     ['/api/weather', (request) => handleWeatherRequest(request)],
     ['/api/transit', (request) => handleTransitRequest(request)],
+    ['/api/offline-tile', (request) => handleOfflineTileRequest(request)],
   ];
   return {
     name: 'trajecto-api',
